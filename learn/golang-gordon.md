@@ -62,7 +62,7 @@ Golang 的主要目标是”兼具 Python 等动态语言的开发速度和 C/C+
 访问 [Golang官网](https://go.dev/) 下载合适的版本。解压到喜欢的目录，并添加到环境变量即可。类似于 java 和 nodejs。大概如下：
 ```bash
 export GOROOT=/usr/local/go
-export PATH=$GO_HOME/bin:$PATH
+export PATH=$GOROOT/bin:$PATH
 export GOPATH=/Users/jinzhongxu/codes/go
 ```
 
