@@ -17,7 +17,7 @@ Golang 有定义如下的撰写风格：
 2. 大括号 { 不能够换行放置。
 3. if判断式和 for 循环不需要以小括号包覆起来。
 4. 使用 tab 做排版
-除了第二点外（换行会产生编译错误），在不符合上述规定时，仍旧可以编译，但使用了内置 gofmt 工具后，会自动整理代码，使之符合规定的撰写风格。
+除了第二点外（换行会产生编译错误），在不符合上述规定时，仍旧可以编译，但使用了内置 gofmt 工具后，会自动整理代码，使之符合规定的撰写风格。方法是：`gofmt -w main.go`
 
 ## 目标
 Golang 的主要目标是“兼具 Python 等动态语言的开发速度和 C/C++ 等编译型语言的性能与安全性”
@@ -30,13 +30,20 @@ Golang 的主要目标是“兼具 Python 等动态语言的开发速度和 C/C+
 - Go语言支持交叉编译，比如说你可以在运行 Linux 系统的计算机上开发可以在 Windows 上运行的应用程序。这是第一门完全支持 UTF-8 的编程语言，这不仅体现在它可以处理使用 UTF-8 编码的字符串，就连它的源码文件格式都是使用的 UTF-8 编码。Go语言做到了真正的国际化！
 - Go语言有一个吉祥物，在会议、文档页面和博文中，大多会包含下图所示的 Go Gopher，这是才华横溢的插画家 Renee French 设计的，她也是 Go 设计者之一 Rob Pike 的妻子。
 
-![](https://c.biancheng.net/uploads/allimg/180808/1-1PPQA9545W.jpg)
+<!-- ![](https://c.biancheng.net/uploads/allimg/180808/1-1PPQA9545W.jpg) -->
+![](https://camo.githubusercontent.com/2b507540e2681c1a25698f246b9dca69c30548ed66a7323075b0224cbb1bf058/68747470733a2f2f676f6c616e672e6f72672f646f632f676f706865722f6669766579656172732e6a7067)
 - 一种静态强类型、编译型、并发型、并具有垃圾回收功能的编程语言。
 
 
 # 环境
 ## Golang 环境配置
-访问 [Golang官网](https://go.dev/) 下载合适的版本。解压到喜欢的目录，并添加到环境变量即可。类似于 java 和 nodejs。
+访问 [Golang官网](https://go.dev/) 下载合适的版本。解压到喜欢的目录，并添加到环境变量即可。类似于 java 和 nodejs。大概如下：
+```bash
+export GOROOT=/usr/local/go
+export PATH=$GO_HOME/bin:$PATH
+export GOPATH=/Users/jinzhongxu/codes/go
+```
+
 
 ## 测试环境
 ```bash
