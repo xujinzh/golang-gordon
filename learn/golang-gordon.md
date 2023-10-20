@@ -106,14 +106,14 @@ go build -o my_main main.go
 
 # 转义字符（escape char）
 常用的转义字符有：
-1. \t : 制表位，用于对其；
+1. \t : 制表位；
 2. \n : 换行符；
 3. \\\\ : \ 符号；
 4. \\" : " 符号；
 5. \r : 回车符；
    ```go
    fmt.Println("hello, \rgo!")
-   
+
    // 打印结果不是
    hello,
    go!
