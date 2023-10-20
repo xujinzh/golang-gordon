@@ -1,3 +1,5 @@
 # golang-gordon
 
 兼具 Python 等动态语言的开发速度和 C/C++ 等编译型语言的性能与安全性
+
+![](https://camo.githubusercontent.com/2b507540e2681c1a25698f246b9dca69c30548ed66a7323075b0224cbb1bf058/68747470733a2f2f676f6c616e672e6f72672f646f632f676f706865722f6669766579656172732e6a7067)
