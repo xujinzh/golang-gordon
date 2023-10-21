@@ -1,11 +1,13 @@
 package main
 
-import "fmt"
-import "unsafe"
+import (
+	"fmt"
+	"unsafe"
+)
 
 func main() {
-	fmt.Println("hello, \rgo!")
-
-	var x uint = '中'
-	fmt.Printf("%d", unsafe.Sizeof(x))
+	var i int8 = 12
+	x := i + 10
+	fmt.Printf("%T, %d\n", i, unsafe.Sizeof(i))
+	fmt.Printf("%T, %d", x, unsafe.Sizeof(x))
 }
