@@ -345,6 +345,7 @@ Golang 中布尔类型只能取 `true` 和 `false`，布尔类型值占用 1 个
 ### 基本数据类型的转换
 Golang 在不同类型的变量之间赋值时需要**显示转换**。即 Golang 中数据类型不能自动转换。
 
+#### 数值类型间的转换
 ```go
 var x int32 = 100
 
@@ -378,7 +379,79 @@ fmt.Println(x, xf, xi8, xf64)
 	// int32, 4
 	```
 
+#### 数值类型的转为字符串类型
+1. fmt.Sprintf
+	```go
+	var i = 12
+	var f float32 = 1.23
+	var b bool = true
+	var c byte = 'a'
+	var s string
+	s = fmt.Sprintf("%d", i)
+	s = fmt.Sprintf("%f", f)
+	s = fmt.Sprintf("%b", b)
+	s = fmt.Sprintf("%c", c)
+	```
+2. strconv
+	```go
+	var i = 12
+	var f float32 = 1.23
+	var b bool = true
+	// var c byte = 'a'
+	var s string
+	s = strconv.FormatInt(int64(i), 10)
+	s = strconv.Itoa(int(i))
+	// 'f' 表示输出格式，10 表示保留精度10为，32 表示 float64
+	s = strconv.FormatFloat(float64(f), 'f', 10, 64)
+	s = strconv.FormatBool(b)
+	
+	```
+
+#### 字符串类型转数值类型
+- strconv
+	```go
+	var s string = "true"
+	var b bool
+	b, _ = strconv.ParseBool(s)
+	fmt.Println(b)
+
+	var s2 string = "123"
+	var i int64
+	i, _ = strconv.ParseInt(s2, 10, 64)
+	fmt.Println(i)
+
+	var s3 string = "1.45"
+	var f float64
+	f, _ = strconv.ParseFloat(s3, 64)
+	fmt.Println(f)
+	```
+如果将 "abc" 转成数值类型，Golang 会直接将该字符串转为 0（即，如果转换不成功，会转为目标类型的默认值）. 因此，使用 string 类型转数值类型时，要保证输入内容是一个有效数据。
 
 ## 复杂数据类型
 复杂数据类型包含有指针、数组、结构体（struct）、管道（channel）、**函数**、切片（slice）、接口（interface）、map等。
 
+### 指针
+关于指针，我们要知道：
+- 获取变量的内存地址：
+	```go
+	var i = 10
+	fmt.Println("变量 i 的地址是", &i)
+	```
+- 定义指针：
+	```go
+	var i = 10
+	// ptr 是指针，指向 int 变量的内存，
+	// 里面存的值是 &i，即 i 的内存地址
+	var ptr *int = &i
+	fmt.Println("变量 i 的内存地址：", &i)
+	fmt.Println("ptr 也是变量，请把 ptr 的地址打印出来：", &ptr)
+	fmt.Println("ptr 指针变量里面存的值（另一个变量的内存地址）：", ptr)
+	fmt.Println("ptr 指向的变量在内存中的值：", *ptr)
+
+	// 结果
+	// 变量 i 的内存地址： 0xc000112008
+	// ptr 也是变量，请把 ptr 的地址打印出来： 0xc000108018
+	// ptr 指针变量里面存的值（另一个变量的内存地址）： 0xc000112008
+	// ptr 指向的变量在内存中的值： 10
+	```
+  
