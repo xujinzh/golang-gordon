@@ -83,11 +83,11 @@ go version
 	// 导入包
 	import "fmt"
 
-	// 导入多个包
-	import (
-		"fmt"
-		"unsafe"
-	)
+	//// 导入多个包
+	//import (
+	//	"fmt"
+	//	"unsafe"
+	//)
 
 	// func 是关键字，定义函数
 	// main() 是主函数，程序的入口
