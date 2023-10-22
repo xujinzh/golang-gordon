@@ -116,6 +116,127 @@ go version
 	go build -o my_main main.go
 	```
 
+## 导入本地包
+在 Golang 中，我们常常需要导入其他文件夹或项目的包，如导入本项目下子文件夹中某个 `.go` 文件中的变量或函数，导入其他项目（不在本项目目录下，可能同级目录或其他磁盘目录）下某个子文件夹中某个 `.go` 文件中的变量或函数。
+
+如果一个 `.go` 文件中某个变量想要被其他 `.go` 文件中的代码访问，那么该变量的命名要求首字母大写。
+
+### 导入本项目中的变量或函数
+如果想要导入本项目（包括子文件夹）下的变量或函数，需要该项目进行包初始化，即 `go mod init`，具体地，假设项目目录如下：
+```bash
+proj1
+├── go.mod
+├── main.go
+└── misc
+    └── utils.go
+```
+其中，`proj1/misc/utils.go` 里面的内容如下：
+```bash
+package proj1
+
+var Clock string = "石英"
+```
+我们想要在 `proj1/main.go` 中导入 `proj1/misc/utils.go` 里面的变量 `Clock`，方法如下：
+1. 初始化包名:
+	```bash
+	cd proj1
+
+	go mod init
+	# or
+	go mod init proj1
+
+	# 此时会在 proj1 下生成 go.mod 文件
+	# 查看该文件内容
+	cat go.mod
+	# 结果显示如下
+	module proj1
+	go 1.21.3
+	```
+2. 在 `proj1/main.go` 中导入需要的变量：
+	```go
+	package main
+
+	import (
+		"fmt"
+		misc "proj1/misc" // 前面是包别名，后面是包路径名
+	)
+
+	func main() {
+		fmt.Println(misc.Clock)
+	}
+	```
+
+
+### 导入其他项目中的变量或函数
+如果想要导入其他项目（包括子文件夹）下的变量或函数，需要将导入的项目进行包初始化，即 `go mod init`，具体地，假设待导入的项目目录和本项目的目录结构如下：
+```bash
+learn
+├── proj1
+│   ├── go.mod
+│   ├── main.go
+│   └── misc
+│       └── utils.go
+└── proj2
+    ├── go.mod
+    ├── misc
+    │   └── hello.go
+    └── web.go
+```
+`proj2/misc/hello.go` 内容如下：
+```go
+package proj2
+
+var SayHello string = "hello"
+```
+
+我们需要将 `proj2/misc/hello.go` 里面的变量导入到 `proj1/main.go` 中。我们需要将 `proj1` 和 `proj2` 都进行包初始化: `go mod init`，然后，修改 `proj1/go.mod` 文件，最好在 `proj1/main.go` 中导入。具体如下：
+1. 初始化包：
+	```bash
+	# 初始化两个包
+	cd proj1
+	go mod init
+	# 此时在 proj1 下会产生 go.mod 文件
+
+	cd proj2
+	go mod init
+	# 此时在 proj2 下会产生 go.mod 文件
+	```
+2. 修改 `proj1/go.mod` 文件：
+	```bash
+	cd proj1
+	vim go.mod
+	# 增加如下内容：
+	require proj2 v0.0.0
+	replace proj2 => ../proj2
+
+	# 修改后，go.mod 内容大概如下
+	module proj1
+
+	go 1.21.3
+
+	require proj2 v0.0.0
+	replace proj2 => ../proj2
+
+	# 即上面将项目 proj2 的路径写出来
+	# 当 proj2 和 proj1 同目录，replace 项目路径就是 ../proj2
+	# 当 proj2 在其他目录，那么 replace 填写正确路径即可
+	```
+3. 在 `proj1/main.go` 中导入：
+	```go
+	package main
+
+	import (
+		"fmt"
+		proj2Misc "proj2/misc" // 前面是包别名，后面是包路径名
+	)
+
+	func main() {
+		fmt.Println(proj2Misc.SayHello)
+	}
+	```
+如果想要在 `proj1` 下的子文件夹中的其他 `.go` 中导入 `proj2` 中的变量或函数，上面同样使用。
+
+
 # 转义字符（escape char）
 常用的转义字符有：
 - \t : 制表符；
