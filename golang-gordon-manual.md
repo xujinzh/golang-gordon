@@ -522,7 +522,7 @@ fmt.Println(x, xf, xi8, xf64)
 	var s string
 	s = strconv.FormatInt(int64(i), 10)
 	s = strconv.Itoa(int(i))
-	// 'f' 表示输出格式，10 表示保留精度10为，32 表示 float64
+	// 'f' 表示输出格式，10 表示保留精度10为，64 表示 float64
 	s = strconv.FormatFloat(float64(f), 'f', 10, 64)
 	s = strconv.FormatBool(b)
 	
