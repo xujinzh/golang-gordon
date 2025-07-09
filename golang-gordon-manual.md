@@ -189,7 +189,7 @@ package proj2
 var SayHello string = "hello"
 ```
 
-我们需要将 `proj2/misc/hello.go` 里面的变量导入到 `proj1/main.go` 中。我们需要将 `proj1` 和 `proj2` 都进行包初始化: `go mod init`，然后，修改 `proj1/go.mod` 文件，最好在 `proj1/main.go` 中导入。具体如下：
+我们需要将 `proj2/misc/hello.go` 里面的变量导入到 `proj1/main.go` 中。我们需要将 `proj1` 和 `proj2` 都进行包初始化: `go mod init`，然后，修改 `proj1/go.mod` 文件，最后在 `proj1/main.go` 中导入。具体如下：
 1. 初始化包：
 	```bash
 	# 初始化两个包
