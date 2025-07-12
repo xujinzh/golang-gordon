@@ -21,4 +21,4 @@
 go.work
 
 # pkg
-pkg
+pkg/
