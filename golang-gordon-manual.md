@@ -774,8 +774,8 @@ a = a - b
 |&|按位与运算。二进制位同为1时，结果才为1|
 |\||按位或运算。二进制位同为0时，结果才为0|
 |^|按位异或运算。二进制位不同时，结果为1，相同时结果为0|
-|<<|左移运算。二进制位向左（高位）移动，高位丢弃，低位补0。左移$n$位就是乘以2的$n$次方|
-|>>|右移运算。二进制位向右（低位）移动，低位丢弃，高位补0。右移$n$位就是除以2的$n$次方|
+|<<|左移运算。二进制位向左（高位）移动，高位丢弃，低位补0；左移$n$位就是乘以2的$n$次方；低位溢出，符号位不变，并用符号位补溢出的高位|
+|>>|右移运算。二进制位向右（低位）移动，低位丢弃，高位补0；右移$n$位就是除以2的$n$次方；符号位不变，低位补0|
 
 
 ## 逻辑运算符
@@ -877,3 +877,398 @@ fmt.Scanf("%s %d %f %t", &name, &age, &salary, &isPass)
 fmt.Printf("name=%q, age=%d, salary=%f, isPass=%t\n", name, age, salary, isPass)
 ```
 
+# 进制
+## 二进制
+golang中，不能直接使用二进制来表示一个整数，这沿用了C的特点。
+```go
+var i int = 3
+fmt.Printf("%b\n", i)
+```
+
+## 八进制
+```go
+011 == 9
+```
+
+## 十六进制
+```go
+0x11 == 17
+```
+十六进制不区分大小写（a-f, A-F）
+
+# 原码、反码、补码
+1. 二进制的最高位是符号位，0表示正数，1表示负数
+2. 正数的原码、反码、补码一样
+3. 负数的反码：它的原码符号位不变，其他位取反
+4. 负数的补码：它的原码+1
+5. 0的反码、补码都是0
+6. 在计算机中，都是以补码的方式来运算的
+
+# 流程控制
+1. 顺序控制
+2. 分支控制
+3. 循环控制
+
+## 顺序控制
+golang代码按照代码的顺序执行。
+变量要先定义再使用。
+
+## 分支控制
+```go
+// 单分支
+var age byte = 30
+if age > 18 {
+	//
+}
+
+// or
+
+if age := 18; age + 3 > 20 {
+	//
+}
+
+// 双分支
+if age > 18 {
+	//
+} else {
+	//
+}
+
+// 多分支
+if age > 13 {
+	//
+} else if age > 18 {
+	//
+} else { // 可以没有
+	//
+}
+
+
+// switch 
+var key byte
+fmt.Println("please input a char: a, b, c")
+fmt.Scanf("%c", &key)
+
+func addOne(key byte) byte {
+	return key + 1
+}
+
+switch addOne(key) + 1 {
+	case 'a', 'g':
+		fmt.Println("you input a or g")
+	case 'b':
+		fmt.Println("you input b")
+	case 'c':
+		fmt.Println("you input c") 
+	default:
+		fmt.Println("error")
+}
+
+
+// switch 当做 if-else 使用
+var a int = 5
+switch {
+case a == 5:
+	fmt.Println("a is 5")
+case a == 6:
+	fmt.Println("a is 6")
+default:
+	fmt.Println("a is neither 5 nor 6")
+}
+
+// switch 中 case 表达式进行运算
+var score int = 88
+switch {
+case score >= 90:
+	fmt.Println("A+")
+case score >= 80 && score < 90:
+	fmt.Println("A")
+default:
+	fmt.Println("B")
+}
+
+// 在 switch 表达式中声明变量
+// 不推荐
+switch score := 88 {
+case score >= 90:
+	fmt.Println("A+")
+case score >= 80 && score < 90:
+	fmt.Println("A")
+default:
+	fmt.Println("B")
+}
+
+
+// switch 的穿透 fallthrough
+var num int = 10
+switch num {
+	case 10:
+		fmt.Println(10)
+		fallthrough  // 当进入case 10时，也会穿透下面的case，直接打印20
+	case 20:
+		fmt.Println(20)
+	case 30:
+		fmt.Println(30)
+	default:
+		fmt.Println(0)
+}
+
+// type switch
+var x interface{}
+var y float64 = 10.0
+x = y
+switch i := x.(type) {
+case nil:
+	fmt.Printf("x type: %T, value: %v\n", i, i)
+case int:
+	fmt.Printf("x type: %T, value: %v\n", i, i)
+case float64:
+	fmt.Printf("x type: %T, value: %v\n", i, i)
+case func(int) float64:
+	fmt.Printf("x type: %T, value: %v\n", i, i)
+case bool:
+	fmt.Printf("x type: %T, value: %v\n", i, i)
+default:
+	fmt.Printf("unkown type: %T, value: %v\n", i, i)
+}
+
+```
+
+注意：
+1. 即使 if 语句里面的代码块只有一个语句，也要有大括号。
+2. 赋值语句不能作为条件表达式:
+```go
+if b = false { // error
+	//
+}
+```
+3. switch 语句用于基于不同条件执行不同动作，每一个 case 分支都是唯一的，从上到下逐一测试，直到匹配为止；匹配项后面也不需要再加 break；
+4. switch/case 后是一个表达式，可以是常量值、变量，也可以是一个有返回值的函数；
+5. case 后的各个表达式的值的数据类型，必须和 switch 后的表达式数据类型一致；
+6. case 后可以带多个表达式，使用逗号间隔；
+7. case 后的表达式如果是常量值（字面量），则要求不能重复
+```go
+// 这里 5 重复了，错误，但是可以将重复的 5 替换为变量
+switch key {
+	case 5, 10:
+	//
+	case 6, 5:  // 可以将这里的5替换为取值为5的变量
+	//
+	default:
+	//
+}
+```
+8. case 后不需要有 break 和大括号，程序匹配到一个 case 后就会执行对应的代码块，然后退出 switch，如果一个都匹配不到，则执行 default；
+9. default 语句不是必须的；
+10. switch case中fallthrough能够穿透一层case；
+11. switch 语句可以用于 type-switch 来判断某个 interface 变量中实际指向的变量类型。
+
+
+switch 和 if 使用选择：
+1. 如果判断的具体数值不多，而且符合整数、浮点数、字符、字符串这几种类型，建议使用 switch 语句，简洁高效；
+2. 其他情况，如对区间判断和结果为 bool 类型的判断，使用 if，其使用范围更广。
+
+## 循环控制
+```go
+for i := 1; i <=10; i++ {
+	fmt.Println("i=", i)
+}
+```
+
+注意：
+1. 循环条件是返回一个布尔值的表达式；
+2. for 循环的第二种方法：
+```go
+i := 1
+for i <= 10 {
+	fmt.Println("i=", i)
+	i++
+}
+```
+3. for 循环的第三种方法，通常配合 break 使用，避免死循环：
+```go
+// 死循环
+for {
+	fmt.Println("hello")
+}
+
+// 等价于
+for ; ; {
+	fmt.Println("hello")
+}
+
+// break
+i := 1
+for {
+	if i <= 10 {
+		fmt.Println("i=", i)
+	} else {
+		break // 跳出循环
+	}
+	i++
+}
+```
+4. golang 提供 for-range 的方式，可以变量字符串和数组：
+```go
+var str string = "hello"
+for i := 0; i < len(str); i++ { // 按字节遍历，字符串中出现中文（一个中文字符3个字节）时会有问题；可以使用 str2 = []rune(str)
+	fmt.Printf("str[%d] = %c\n", i, str[i])
+}
+
+// for-range
+for index, val := range str { // 按字符遍历，但是 index 按照字节计数
+	fmt.Printf("str[%d] = %c\n", index, val)
+}
+```
+
+在golang中没有 while 循环和 do-while 循环，不过可以使用 for 实现 while 循环的效果：
+```go
+// while 
+var i int = 1
+for {
+	if i > 10 {
+		break
+	}
+	fmt.Println("hello", i)
+	i++
+}
+
+// do-while
+var i int = 1
+for {
+	fmt.Println("hello", i)
+	i++
+	if i > 10 {
+		break
+	}
+}
+```
+
+打印金字塔
+```go
+var totalLevel int = 5
+for i := 1; i <= totalLevel; i++ {
+	for k := 1; k <= totalLevel-i; k++ {
+		fmt.Print(" ")
+	}
+	for j := 1; j <= 2*i-1; j++ {
+		fmt.Print("*")
+	}
+	fmt.Println()
+}
+```
+打印镂空金字塔
+```go
+var totalLevel int = 5
+for i := 1; i <= totalLevel; i++ {
+	for k := 1; k <= totalLevel-i; k++ {
+		fmt.Print(" ")
+	}
+	for j := 1; j <= 2*i-1; j++ {
+		if j == 1 || j == 2*i-1 || i == totalLevel {
+			fmt.Print("*")
+		} else {
+			fmt.Print(" ")
+		}
+	}
+	fmt.Println()
+}
+```
+
+判断一个数是否是水仙花数
+```go
+// 水仙花数：一个3位数的水仙花数是指其各位数字的立方和等于它本身。
+// 例如：153 = 1^3 + 5^3 + 3^3
+// 下面的代码会输出所有的水仙花数。
+var num uint32
+fmt.Println("请输入一个三位数：")
+fmt.Scanf("%d", &num)
+numHundreds := num / 100
+numTens := (num / 10) % 10
+numOnes := num % 10
+if num == uint32(math.Pow(float64(numHundreds), 3)+math.Pow(float64(numTens), 3)+math.Pow(float64(numOnes), 3)) {
+	fmt.Printf("%d 是水仙花数\n", num)
+} else {
+	fmt.Printf("%d 不是水仙花数\n", num)
+}
+```
+
+生成随机数
+```go
+import "math/rand"
+
+//
+fmt.Println(time.Now().Unix())
+fmt.Println(time.Now().Weekday())
+
+var targetNum int = 99
+var count int = 0
+for {
+	n := rand.Intn(100) + 1
+	count++
+	if n == targetNum {
+		break
+	}
+}
+fmt.Printf("生成 %d 循环了 %d 次\n", targetNum, count)
+```
+golang中标签的使用
+```go
+label2:
+	for i := 0; i < 4; i++ {
+	label1:
+		for j := 0; j < 5; j++ {
+			if j == 2 {
+				break label1
+			}
+			fmt.Println("j=", j)
+		}
+		if i == 3 {
+			break label2
+		}
+	}
+```
+break 的注意事项：
+1. break 语句出现在多层嵌套的语句块时，可以通过标签指明要终止的哪一层循环；
+2. break 默认会跳出最近的循环；
+
+continue 的注意事项：
+1. continue 语句用于结束本次循环，继续执行下一次循环；
+2. continue 语句出现在多层嵌套的循环语句块中，可以通过标签指明要跳过的是哪一层循环；
+
+goto 的注意事项：
+1. goto 和 if、标签搭配使用。不建议在代码中使用 goto;
+
+return 的注意事项：
+1. return 返回函数返回值；
+2. 用于退出函数，或程序（main函数）；
+
+
+# 函数
+为完成某一功能的程序指令（语句）的集合，称为函数。golang 中，函数分为自定义函数和系统函数。
+
+## 包
+包的本质就是创建不同的文件夹来存放程序文件。
+
+golang 的每一个文件都是属于一个包，golang 以包的形式来管理文件和项目目录结构。
+
+包的作用：
+1. 区分相同名字的函数、变量等标识符；
+2. 当程序文件很多时，可以很好的管理项目；
+3. 控制函数、变量等访问范围，即作用域。
+
+```go
+// create package
+package packageName
+
+// use package
+// 从 GOPATH下 src 里面的文件夹开始直到源文件的文件夹
+import "packageName Path"
+
+// 调用函数
+packageName.funcName
+```
+
+包的注意事项：
+1. 在给一个文件打包时，该包对应一个文件夹。文件的包名通常与文件所在的文件夹名一致，一般为小写字母；
+2. 
