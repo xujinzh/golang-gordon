@@ -1271,4 +1271,37 @@ packageName.funcName
 
 包的注意事项：
 1. 在给一个文件打包时，该包对应一个文件夹。文件的包名通常与文件所在的文件夹名一致，一般为小写字母；
-2. 
+2. 当一个文件要使用其他包函数或变量时，需要先引入对应的包
+```go
+import "packageName"
+// or
+import "packageName Path"
+
+
+import (
+	"packageName1"
+	"packageName2"
+)
+```
+3. package 指令在文件的第一行，然后是 import 指令；
+4. 在 import 时，路径从 $GOPATH 的 src 下文件夹开始，不用带 src；
+5. 为了让其他包的文件，可以访问到本包的函数，需要该函数名首字母大写，类似于其他语言的 public，这样才能跨包使用；
+6. 在访问其他包的函数时，语法是 包名.函数名；
+7. 如果包名太长，golang 支持给包取别名，但是取别名后原来的包名就不能使用了；
+8. 在同一个包下不能有相同的函数名、全局变量名等，否则报重复定义；
+9. 如果要编译成一个可执行文件，那么需要将这个包声明为 main 包（package main）。这是一个语法规范。如果要写一个库，包名可以自定义。
+10. 编译流程：
+```bash
+// 先设置 GO111MODULE 为自动模式
+go env -w GO111MODULE=auto
+cd $GOPATH
+// 编译时，编译路径不需要带 src，编译器会自动带
+go build learn/proj3
+// 编译时需要编译 main 包所在的文件夹
+// 项目的目录结构要按照规范组织：$GOPATH/src/项目名/包名/源码文件，main.go 一般放在 main 文件夹（包名）下
+// 可以自定编译后可执行文件名
+go build -o bin/my.exe learn/proj3
+```
+
+
+
