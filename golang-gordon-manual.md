@@ -1307,7 +1307,7 @@ go build -o bin/my.exe learn/proj3
 # 基于 GO MOD 的新方式，在 GO 1.11 后引入
 mkdir xgo
 mkdir xgo/main
-touch xgo/main/main.go
+touch xgo/main/main.go // 也可以不用把 main.go 放到 main 文件夹，直接放到 xgo 项目文件夹下
 mkdir xgo/utils
 touch xgo/utils/util.go
 
@@ -1364,5 +1364,11 @@ GOOS=windows GOARCH=amd64 go build -o demo.exe
 GOOS=linux GOARCH=amd64 go build -o demo
 ```
 
+## 函数调用
+函数调用的细节：
+1. 在调用一个函数时，会给该函数分配一个新的空间，编译器会通过自身的处理让这个新的空间和其他的栈空间区分开来；
+2. 在每个函数对应的栈中，数据空间是分开的，不会混淆；
+3. 当一个函数调用完毕（执行完毕）后，程序会销毁这个函数对应的栈空间。
 
+### 递归调用
 
