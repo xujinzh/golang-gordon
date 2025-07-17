@@ -1292,15 +1292,76 @@ import (
 9. 如果要编译成一个可执行文件，那么需要将这个包声明为 main 包（package main）。这是一个语法规范。如果要写一个库，包名可以自定义。
 10. 编译流程：
 ```bash
-// 先设置 GO111MODULE 为自动模式
+# 基于GOPATH的旧方式
+# 先设置 GO111MODULE 为自动模式
 go env -w GO111MODULE=auto
 cd $GOPATH
-// 编译时，编译路径不需要带 src，编译器会自动带
+# 编译时，编译路径不需要带 src，编译器会自动带
 go build learn/proj3
-// 编译时需要编译 main 包所在的文件夹
-// 项目的目录结构要按照规范组织：$GOPATH/src/项目名/包名/源码文件，main.go 一般放在 main 文件夹（包名）下
-// 可以自定编译后可执行文件名
+# 编译时需要编译 main 包所在的文件夹
+# 项目的目录结构要按照规范组织：$GOPATH/src/项目名/包名/源码文件，main.go 一般放在 main 文件夹（包名）下
+# 可以自定编译后可执行文件名
 go build -o bin/my.exe learn/proj3
+
+
+# 基于 GO MOD 的新方式，在 GO 1.11 后引入
+mkdir xgo
+mkdir xgo/main
+touch xgo/main/main.go
+mkdir xgo/utils
+touch xgo/utils/util.go
+
+go mod init xgo
+
+cat > xgo/utils/util.go <<-"EOF"
+package utils
+
+var Name = "Hero"
+EOF
+
+cat > xgo/main/main.go <<-"EOF"
+package main
+
+
+import (
+    "fmt"
+    "xgo/utils"
+)
+
+func main() {
+    fmt.Println(utils.Name)
+}
+EOF
+
+go mod tidy
+go mode verify
+
+# 先设置 GO111MODULE 开启
+go env -w GO111MODULE=auto
+
+# 进入项目，项目不一定要放到 src 下
+cd xgo
+
+# 编译
+go build -o xgo main/main.go
+# or
+cd main && go build -o xgo main.go
+# or
+cd main && go build -o xgo
+# 不指定编译后的文件名，则使用默认main
+cd main && go build
+
+# 编译成 windows 可执行程序
+cd main && GOOS=windows GOARCH=amd64 go build -o xgo.exe main.go
+```
+
+**交叉编译**
+```bash
+# linux 平台下编译生成 windows 可执行程序
+GOOS=windows GOARCH=amd64 go build -o demo.exe
+
+# windows 平台下编译生成 linux 可执行程序
+GOOS=linux GOARCH=amd64 go build -o demo
 ```
 
 
