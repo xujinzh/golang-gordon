@@ -1371,4 +1371,100 @@ GOOS=linux GOARCH=amd64 go build -o demo
 3. 当一个函数调用完毕（执行完毕）后，程序会销毁这个函数对应的栈空间。
 
 ### 递归调用
+一个函数在函数体内又调用了本身，称为递归调用。
 
+## 函数注意事项
+1. 函数的形参列表可以时多个，返回值列表也可以是多个。当返回值列表是多个时，应该用小括号括起来：
+```go
+func MultiAdd(n1 int, n2 int) (int, int) {
+	return n1 + n2, n1 * n2
+}
+```
+2. 形参列表和返回值列表的数据类型可以是值类型和引用类型；
+3. 函数的命名遵循标识符命名规范，首字母不能是数字，首字母大写时可以被本包和其他包文件调用；首字母小写时，只能被本包文件调用，其他包文件不能调用；
+4. 函数中的变量是局部变量，函数外不能使用；
+5. 基本数据类型和**数组**默认都是值传递，即值拷贝。在函数内修改，不会影响到原来的值；
+6. 如果希望函数内的变量能够修改函数外的变量，可以传入变量的地址（如 `&x`），函数内以指针的方式操作变量。类似于引用；
+7. golang 函数不支持函数重载；
+8. golang 中，函数也是一种数据类型，可以赋值给一个变量，该变量就是一个函数类型的变量，通过该变量可以对函数调用；
+9. 函数既然是一种数据类型，因此函数可以作为形参，并且可以被调用；
+```go
+func Add(n1 int, n2 int) int {
+	return n1 + n2
+}
+func ComAdd(funvar func(int, int) int, num1 int, num2 int) int {
+	return funvar(num1, num2)
+}
+
+func main() {
+	res := ComAdd(Add, 3, 2)
+}
+```
+10. 为了简化数据类型定义，golang 支持自定义数据类型
+```go
+基本语法：type 自定义数据类型名 数据类型 // 相当于一个别名
+案例：type customInt int // 此时 customInt 等价于 int，但是 golang 认为它们不是同一种数据类型
+// 例子
+type customInt int
+var n1 custiomInt = 30
+var n2 int
+n2 = n1 // error
+n2 = int(n1) // right
+
+案例：type customFunc func(int, int) int // 当函数作为形参时可以简化形参定义
+// 例子
+func ComAdd(funvar func(int, int) int, num1 int, num2 int) int {
+	return funvar(num1, num2)
+}
+
+type customFunc func(int, int) int
+func ComAdd(funvar customFunc, num1 int, num2 int) int {
+	return funvar(num1, num2)
+}
+```
+11. golang 支持对函数返回值命名
+```go
+func cal(n1 int, n2 int) (sum int, sub int) {
+	sum = n1 + n2
+	sub = n1 - n2
+	return
+}
+```
+12. 使用 _ 标识符，忽略返回值
+```go
+a, _ = MultiAdd(3, 2)
+```
+13. golang 支持可变参数：
+```go
+// 支持 0 到多个参数
+func sum(args... int) sum int {
+	//
+}
+
+// 支持 1 到多个参数
+func sum(n1 int, args... int) sum int {
+	//
+}
+
+// args 是切片 slice（动态数组），通过 args[index] 可以访问到各个值
+// args 名字可以变，如 xargs
+// 可变参数要放到形参列表的后面
+func sum(n1 int, xargs... int) s int {
+	s = n1
+	for i := 0; i < len(xargs); i++ {
+		s += xargs[i]
+	}
+	return
+}
+```
+14. 形参类型一致时，可以合并：
+```go
+func add(n1, n2 int) int {
+	//
+}
+
+// 等价于
+func add(n1 int, n2 int) int {
+	//
+}
+```
