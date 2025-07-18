@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 var Name = "xujinzh"
 
@@ -33,4 +36,6 @@ func main() {
 	fmt.Println("Name=", Name)
 	fmt.Println("main end")
 
+	var str string = strings.Trim("!helloo!", "!o")
+	fmt.Println("str after trim:", str)
 }

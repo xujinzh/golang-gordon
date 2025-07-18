@@ -280,3 +280,29 @@ func main() {
 	//
 }
 ```
+
+## 字符串函数
+1. 统计字符串的长度，按字节 len(str)
+2. 字符串遍历，同时处理有中文的问题 r := []rune(str)
+3. 字符串转整数 n, err := strconv.Atoi("12")
+4. 整数转字符串 str = strconv.Itoa(1234)
+5. 字符串转 []byte, var bytes = []byte("hello go")
+6. []byte 转字符串，str = string([]byte{97, 98, 99})
+7. 10 进制转2，8，16进制，str = strconv.FormatInt(123, 2), strconv.FormatInt(123, 8), strconv.FormatInt(123, 16)
+8. 查找子串是否在指定的字符串中，strings.Contains("seafood", "foo")，返回布尔值
+9. 统计一个字符串有几个指定的子串，strings.Count("ceheese", "e")，返回整数值
+10. 不区分大小写的字符串比较（==是区分字母大小写的比较），strings.EqualFold("abc", "Abc")
+11. 返回子串在字符串第一次出现的 index 值，strings.Index("ABC_abc", "abc"), 如果没有则返回-1
+12. 将 string 数组的元素按照指定的字符串拼接起来，strings.Join(s, "|||")
+13. 返回子串在字符串最后一次出现的 index 值，strings.LastIndex("go gopher", "go")，如果没有返回-1
+14. 将指定的子串替换成另外一个子串，strings.Replace("oink oink oink", "k", "ky", n), n 可以指定你希望替换几个，如果 n=-1，表示全部替换
+15. 按照指定的某个字符，为分割标识，将一个字符串拆分成字符串数组，strings.Split("hello,world,ok",",")
+16. 将字符串的字符进行大小写转换，strings.ToLower("Go") 表示转为小写，strings.ToUpper("go") 表示转为大写， 返回字符串
+17. 将字符串左右两边的空格去掉，strings.TrimSpace("  tn a lone gopher  ")， 返回字符串
+18. 将字符串左右两边指定的字符去掉，strings.Trim("!hello !", "! ") 表示去掉字符串左右两边的字符'!'和' '， 返回字符串
+19. 将字符串左边指定的字符去掉，strings.TrimLeft("!hello!", "! ") 表示去掉字符串左两边的字符'!'和' '， 返回字符串
+20. 将字符串右边指定的字符去掉，strings.TrimRight("!hello!", "! ") 表示去掉字符串右两边的字符'!'和' '， 返回字符串
+21. 判断字符串是否以指定的字符串开头，strings.HasPrefix("ftp://192.168.10.1", "ftp")，返回布尔值
+22. 判断字符串是否以指定的字符串结束，strings.HasSuffix("nature.jpg", "jpg")，返回布尔值
+
+
