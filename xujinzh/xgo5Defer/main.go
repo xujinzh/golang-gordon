@@ -38,4 +38,8 @@ func main() {
 
 	var str string = strings.Trim("!helloo!", "!o")
 	fmt.Println("str after trim:", str)
+
+	fmt.Println(0x12, 0o35, 0b101100110)
+	print(str[1:])
+	println(str[1:])
 }
