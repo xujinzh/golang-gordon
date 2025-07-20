@@ -1859,5 +1859,71 @@ num := new(int)
 *num = 1 
 ```
 3. make：用来分配内存，主要用来分配应用类型，如channel, map, slice
-4. 
+
+
+# 异常处理
+1. golang 中不支持 try...catch...finally, try...except
+2. golang 中引入 defer, panic, recover
+3. golang 中抛出一个 panic 异常，然后在 defer 中通过 recover 捕获这个异常，然后正常处理
+
+
+## 自定义错误
+在 golang 程序中，也支持自定义错误，使用 errors.New 和 panic 内置函数。
+1. errors.New("错误说明") 会返回一个 error 类型的值，表示一个错误
+2. panic 内置函数，接收一个空接口 interface() 类型的值（也就是任何值了）作为参数。接收 error 类型的变量，输出错误信息，并退出程序
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+func divide(a, b int) int {
+	// 使用 defer + recover 来处理除以零的异常
+	defer func() {
+		// recover 是内置函数
+		err := recover() // golang 中的 recover 函数可以捕获 panic
+		// 如果发生 panic，err 将不为 nil
+		if err != nil {
+			fmt.Println(err)
+			b += 1 // 如果发生异常，b 加 1，避免除以零
+			fmt.Println("Adjusted b to avoid division by zero:", b)
+		}
+	}()
+	res := a / b
+	return res
+}
+
+// 函数读取一个配置文件 config.ini 的信息
+// 如果文件名不正常，返回一个自定义的错误
+func readConfigFile(filename string) (err error) {
+	if filename == "config.ini" {
+		// read
+		return nil
+	} else {
+		// 返回一个自定义的错误
+		return errors.New("读取文件错误")
+	}
+}
+
+func read() {
+	err := readConfigFile("config.ini")
+	if err != nil {
+		panic(err) // 如果发生错误，触发 panic
+	}
+	fmt.Print("读取配置文件成功...\n")
+}
+
+func main() {
+	a := 10
+	b := 0 // 这里故意设置为0来触发异常
+	result := divide(a, b)
+	fmt.Println("The result of division is:", result)
+	fmt.Println("done!")
+
+	read() // 调用读取配置文件的函数
+}
+```
 
