@@ -2360,4 +2360,12 @@ for student, info := range studentMap {
 }
 ```
 
+map 的长度
+```go
+var cities := make(map[string]string)
+len(cities)
+```
+
+map 切片
+切片的数据类型如果是 map，叫做 slice of map，map 切片中map 个数可以动态变化。
 
