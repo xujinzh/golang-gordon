@@ -2249,10 +2249,115 @@ var m map[int]string
 var m map[string]map[string]string
 注意：map 声明不会分配内存，只有初始化（make）后才分配内存，分配内存后才能赋值和使用。
 
+map 的使用方式
+```go
+// 方式1
+var cities map[string]string
+cities = make(map[string]string, 10)
+cities["cityeName"] = "上海"
 
+// 方式2
+var cities = make(map[string]string)
+cities["cityeName"] = "上海"
 
+// 方式3
+var cities map[string]string = map[string]string {
+	"cityName": "成都",
 
+}
+cities["cityeName"] = "上海"
 
+// 方式4
+cities := map[string]string {
+	"cityName": "成都",
+	
+}
+cities["cityeName"] = "上海"
+```
 
+map 嵌套
+```go
+// map 的嵌套
+// 创建一个学生信息的嵌套 map
+// 学生姓名作为键，值是另一个 map，包含年龄、城市和爱好等信息
+// 例如: map[string]map[string]string
+studentMap := make(map[string]map[string]string)
+studentMap["xujinzh"] = make(map[string]string)
+studentMap["xujinzh"]["age"] = "18"
+studentMap["xujinzh"]["city"] = "成都"
+studentMap["xujinzh"]["hobby"] = "编程"
+
+studentMap["lisi"] = make(map[string]string)
+studentMap["lisi"]["age"] = "20"
+studentMap["lisi"]["city"] = "上海"
+studentMap["lisi"]["hobby"] = "音乐"	
+fmt.Println("学生信息:", studentMap)
+for student, info := range studentMap {
+	fmt.Println("学生:", student)
+	for key, value := range info {
+		fmt.Printf("  %s: %s\n", key, value)
+	}
+}
+```
+
+map 增删改查
+```go
+// map 的增删改查
+cities := make(map[string]string)
+cities["no1"] = "北京"
+cities["no2"] = "上海"
+cities["no3"] = "广州"	
+fmt.Println(cities)
+
+// 增加
+cities["no4"] = "深圳"
+fmt.Println("增加后:", cities)
+
+// 修改
+cities["no2"] = "杭州"
+fmt.Println("修改后:", cities)
+
+// 删除
+delete(cities, "no3") // 内置函数
+fmt.Println("删除后:", cities)
+
+// 查询
+if city, exists := cities["no1"]; exists {
+	fmt.Println("查询到的城市:", city)
+} else {
+	fmt.Println("没有查询到城市")
+}
+```
+
+map 删除细节
+1. 如果要删除 map 的所有 key，没有专门的方法一次删除。只能遍历逐个删除
+2. 或者 map = make(), make 一个新的，让原来的成为垃圾，被 GC 回收
+
+map 遍历
+```go
+// map 的遍历
+for key, value := range cities {
+	fmt.Printf("key: %s, value: %s\n", key, value)
+}
+
+// 嵌套 map 的遍历
+studentMap := make(map[string]map[string]string)
+studentMap["xujinzh"] = make(map[string]string)
+studentMap["xujinzh"]["age"] = "18"
+studentMap["xujinzh"]["city"] = "成都"
+studentMap["xujinzh"]["hobby"] = "编程"
+
+studentMap["lisi"] = make(map[string]string)
+studentMap["lisi"]["age"] = "20"
+studentMap["lisi"]["city"] = "上海"
+studentMap["lisi"]["hobby"] = "音乐"	
+fmt.Println("学生信息:", studentMap)
+for student, info := range studentMap {
+	fmt.Println("学生:", student)
+	for key, value := range info {
+		fmt.Printf("  %s: %s\n", key, value)
+	}
+}
+```
 
 
