@@ -1996,6 +1996,263 @@ var arr = [...]int{1, 2, 3, 4, 5}
 var sli []int = arr[1:3]
 fmt.Println("slice 的容量", cap(sli))
 ```
-切片的容量 cap(slice) 是动态变化的，根据切片元素的个数动态调整。
+切片(var sli []int = arr[1:3])的容量 cap(slice) 是动态变化的，根据切片元素的个数动态调整。切片从底层来说，其实就是一个数据结构 struct 结构体
+```go
+type sli struct {
+	ptr *[2]int
+	len int
+	cap int
+}
+```
+改变 sli 的值会改变 arr 的值，因为切片是引用。
+
+切片使用的三种方式：
+1. 定义一个切片，然后让切片去引用一个已经创建好的数组。直接引用一个数组，这个数值实现存在，开发人员可见。
+2. 通过 make 来创建切片。make 也会创建一个数组，是由切片在底层进行维护，开发人员是不可见的：
+```go
+var 切片名 []type = make([]type, len, [cap])
+// type 是数据类型
+// len 表示切片大小
+// cap 表示切片容量，可选，但不小于 len
+var intSlice []int = make([]int, 4, 10)
+```
+3. 定义一个切片时，直接指定具体数组，原理类似于 make 的方式
+```go
+var strSlice []string = []string{"liubei", "guanyu", "zhangfei"}
+```
+
+切片注意事项
+1. 切片初始化时 var slice = arr[startIndex:endIndex]，从 arr 数组小标为 startIndex， 取到下标 endIndex 的元数（不含 arr[endIndex]）
+2. 切片初始化时，仍然不能越界，范围在 [0, len(arr)]之间，但是可以动态增长
+3. var slice = arr[0:end] 可以简写 var slice = arr[:end]
+4. var slice = arr[start:len(arr)] 可以简写 var slice = arr[start:]
+5. var slice = arr[0:len(arr)] 可以简写 var slice = arr[:]
+6. cap 是一个内置函数，用于统计切片的容量，即最大可以存放多少个元素
+7. 切片定义后，还不能使用，因为本身是一个空的，需要让其引用到一个数组，或者 make 一个空间供切片来使用
+8. 切片可以继续切片
+9. 用 append 内置函数，可以对切片进行动态追加
+```go
+var slice []int = []int{100, 200, 300}
+append(slice, 400, 500)
+```
+10. 切片 append 操作的本质就是对数组扩容
+11. golang 底层会创建一个新的数组 newArr（按照扩容后大小），将切片原来包含的元素拷贝到新的数组 newArr，切片重新引用到 newArr，注意 newArr 是在底层来维护的，开发人员不可见。
+12. 切片的拷贝操作，可以使用内置拷贝函数完成
+```go
+// 切片拷贝
+var sli4 []int = []int{1, 2, 3, 4, 5}
+var sli5 = make([]int, 10)
+copy(sli5, sli4) // 拷贝 sli4 到 sli5, sli4 and sli5 在内存中有独立的空间
+fmt.Println("Original slice:", sli4)
+fmt.Println("Copied slice:", sli5)
+
+// sli4 和 sli5 的数据空间是独立的，互相不影响，也就是说， 改变 sli4[0] = 99，不会影响 sli5[0] 的值
+// 如果 sli5 的空间不是10，而是3，小于 sli4 的空间元素个数，那么程序也不会报错，只会将 sli4 的前3个元素拷贝到 sli5
+```
+
+## string and slice
+1. string 底层是一个 byte 数组，因此 string 也可以进行切片处理
+2. string 是不可变的，也就是说不能通过 str[0] = 'z' (var str = "abc") 的方式来修改字符串
+3. 如果需要修改字符串，那么可以先将 string 转成切片（[]byte 或 []rune），然后再修改，之后重写成 string
+```go
+// 修改字符串的值
+var str2 = "hello, world"
+sli10 := []byte(str2) // 二进制的数据要使用这种方式
+sli10[0] = 'z' // 修改切片的第一个字节
+fmt.Println("Modified byte slice:", sli10)
+str2 = string(sli10) // 转换回字符串
+fmt.Println("String after modification:", str2)
+
+// 转成 []byte 后，可以处理英文和数字，但不能处理中文
+// 原因是 []byte 只处理单字节字符，而中文字符通常是3字节的，因此会出现乱码
+// 解决方法是将 string 转成 []rune 即可，因为 []rune 可以处理按字符处理，兼容中文
+str3 := "你好，世界"
+sli11 := []rune(str3)
+sli11[0] = '都' // 修改切片的第一个字符
+fmt.Println("Modified rune slice:", sli11)
+str3 = string(sli11) // 转换回字符串
+fmt.Println("String after rune modification:", str3)
+```
+
+# 排序和查找
+排序是将一组数据，依据指定的顺序进行排列的过程。排序的分类：
+1. 内部排序：将需要处理的所有数据都加载到内部存储器中进行排序，如交换式排序法、选择式排序法和插入式排序法
+2. 外部排序：数据量过大，无法全部加载到内存中，需要借助外部存储进行排序，如合并排序法、直接合并排序法
+
+## 交换式排序
+交换式排序属于内部排序法，是运用数据值比较厚，依据判断规则对数据位置进行交换，以达到排序的目的。交换式排序法包括两种：
+1. 冒泡排序法（Bubble sort）
+2. 快速排序法（Quick sort）
+
+### 冒泡排序法
+冒泡排序的基本思想是通过对待排序序列从后向前（从下标较大的元素开始），依次比较相邻元素的排序码，若发现逆序则交换，使排序码较小的元素逐渐从后部移向前部（从下标较大的单元移向下标较小的单元），将像水底下的气泡一样逐渐向上冒泡。
+
+因为排序的过程中，各元素不断接近自己的位置，如果一趟比较下来没有进行过交换，就说明序列有序，因此要在排序过程中设置一个 flag 进行判断元素是否进行过交换，从而减少不必要的比较，加快程序执行速度。
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+// 冒泡排序
+// Bubble Sort
+func bubbleSort(arr *[6]int) {
+	for i := 0; i < len(*arr)-1; i++ {
+		flag := false // 优化标志
+		// 每次遍历，假设没有交换
+		for j := 0; j < len(*arr)-1-i; j++ {
+			if (*arr)[j] > (*arr)[j+1] {
+				// 交换位置
+				(*arr)[j], (*arr)[j+1] = (*arr)[j+1], (*arr)[j]
+				flag = true // 发生了交换
+			}
+		}
+		if !flag {
+			// 如果没有发生交换，说明数组已经有序，可以提前结束
+			break
+		}
+	}
+}
+
+func main() {
+	// 定义数组
+	arr := [...]int{5, 2, 9, 1, 5, 6}
+	fmt.Println("排序前", arr)
+	bubbleSort(&arr)
+	fmt.Println("排序后", arr)
+}
+```
+## 查找
+在 golang 中，常用的查找有两种：
+1. 顺序查找
+2. 二分查找
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+// 二分查找
+func binarySearch(arr *[]int, leftIndex int, rightIndex int, target int) int {
+	if leftIndex > rightIndex {
+		return -1 // 没有找到目标元素，返回 -1
+	}
+	
+	midIndex := (leftIndex + rightIndex) / 2 // 计算中间索引
+	if (*arr)[midIndex] == target {
+		return midIndex // 找到目标元素，返回索引
+	} else if (*arr)[midIndex] > target {
+		// 目标元素在左半部分
+		return binarySearch(arr, leftIndex, midIndex-1, target)
+	} else {
+		// 目标元素在右半部分
+		return binarySearch(arr, midIndex+1, rightIndex, target)
+	}
+}
+
+
+func main() {
+	arr2 := []int{1, 2, 3, 4, 5, 6}
+	target := 4
+	index := binarySearch(&arr2, 0, len(arr2)-1, target)
+	fmt.Printf("目标元素 %d 在数组中的索引是: %d\n", target, index)
+}
+```
+
+# 二维数组
+二维数组是多维数组的一种。
+```go
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	// 定义或声明一个二维数组
+	var arr [4][6]int
+	// 初始化二维数组
+	arr[1][2] = 1
+	arr[2][1] = 2
+	arr[2][3] = 3
+
+	// 打印二维数组
+	fmt.Println("二维数组 arr:", arr)
+
+	// 遍历二维数组
+	for i := 0; i < len(arr); i++ {
+		for j := 0; j < len(arr[i]); j++ {
+			fmt.Print(arr[i][j], " ")
+		}
+		fmt.Println()
+	}
+
+	fmt.Println(len(arr))
+	fmt.Println(len(arr[0]))
+}
+```
+二维数组 arr [2][3]int 指向一个数组，里面存放2个指针（地址），每一个指针指向一个数组，里面存放3个整数值。所以 arr[0] 的地址和 arr[0][0] 的地址一样；arr[1] 的地址和 arr[1][0] 的地址一样。
+
+二维数组的声明：
+```go
+// 定义或声明一个二维数组
+var arr2 [2][3]int = [2][3]int{{1, 2, 3}, {4, 5, 6}}
+// 打印二维数组
+fmt.Println("二维数组 arr2:", arr2)
+
+var arr3 [2][3]int = [...][3]int{{1, 2, 3}, {4, 5, 6}}
+var arr4 = [2][3]int{{1, 2, 3}, {4, 5, 6}}
+var arr5 = [...][3]int{{1, 2, 3}, {4, 5, 6}}
+arr6 := [2][3]int{{1, 2, 3}, {4, 5, 6}}
+arr7 := [...][3]int{{1, 2, 3}, {4, 5, 6}}
+fmt.Println("二维数组 arr3:", arr3)
+fmt.Println("二维数组 arr4:", arr4)
+fmt.Println("二维数组 arr5:", arr5)
+fmt.Println("二维数组 arr6:", arr6)
+fmt.Println("二维数组 arr7:", arr7)
+
+// 遍历
+for i := 0; i < len(arr3); i++ {
+	for j :=0; j < len(arr3[i]); j++ {
+		fmt.Printf("%v\t", arr3[i][j])
+	}
+	fmt.Println()
+}
+
+for i, v := range arr3 {
+	for j, v2 := range v {
+		fmt.Printf("arr3[%d][%d] = %d\t", i, j, v2)
+	}
+	fmt.Println()
+}
+```
+
+# map
+
+map 是 key-value 数据结构，又称为字段或者关联数组，类似其他编程语言的集合或字典。
+
+基本语法：
+var 变量名 map[keytype]valuetype
+
+key 可以是很多种类型，如 bool, int, string, 指针，chann，结构，结构体，数组，**通常情况下为 int，string**。但是 slice，map，function 不可以，因为它们不能用 == 来判断。
+
+value 的类型和key基本是一样的。通常为 int, float, string, map, struct
+
+map 的声明：
+var m map[string]string
+var m map[string]int
+var m map[int]string
+var m map[string]map[string]string
+注意：map 声明不会分配内存，只有初始化（make）后才分配内存，分配内存后才能赋值和使用。
+
+
+
+
+
+
 
 
