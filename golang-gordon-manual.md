@@ -2231,7 +2231,7 @@ for i, v := range arr3 {
 }
 ```
 
-# map
+# 映射 map
 
 map 是 key-value 数据结构，又称为字段或者关联数组，类似其他编程语言的集合或字典。
 
@@ -2367,5 +2367,527 @@ len(cities)
 ```
 
 map 切片
-切片的数据类型如果是 map，叫做 slice of map，map 切片中map 个数可以动态变化。
+切片的数据类型如果是 map，叫做 slice of map，map 切片中 map 个数可以动态变化。map 切片要初始化两次。
+
+```go
+// map 切片
+
+// 声明一个 map 切片
+var sliceOfMaps = make([]map[string]string, 2)
+// 初始化 map 切片
+if sliceOfMaps[0] == nil {
+	sliceOfMaps[0] = make(map[string]string, 2)
+	sliceOfMaps[0]["name"] = "xujinzh"
+	sliceOfMaps[0]["age"] = "18"
+
+}
+if sliceOfMaps[1] == nil {
+	sliceOfMaps[1] = make(map[string]string, 2)
+	sliceOfMaps[1]["name"] = "lisi"
+	sliceOfMaps[1]["age"] = "20"
+}
+
+// 使用切片 append 函数，动态增加 map
+newMap := make(map[string]string, 2)
+newMap["name"] = "wangwu"
+newMap["age"] = "22"
+sliceOfMaps = append(sliceOfMaps, newMap)
+// 打印 map 切片
+fmt.Println(sliceOfMaps)
+```
+
+map 排序
+1. golang 中没有一个专门的方法针对 map 的 key 进行排序
+2. golang 中的 map 默认是无序的，也不是按照添加的顺序存放的，每次遍历的输出可能也不一样
+3. golang 中 map 的排序是先将 key 进行排序，然后根据 key 遍历输出
+
+```go
+//  map 排序
+mapVar := make(map[int]int, 10)
+mapVar[3] = 30
+mapVar[1] = 10
+mapVar[2] = 20
+mapVar[5] = 50
+mapVar[4] = 40
+mapVar[6] = 60
+fmt.Println("未排序的 map:", mapVar)
+// 使用切片存储 map 的键
+keys := make([]int, 0, len(mapVar))
+for key := range mapVar {
+	keys = append(keys, key)
+}
+// 对键进行排序
+sort.Ints(keys)
+// 或者使用冒泡排序（不推荐，因为效率低）
+// for i := 0; i < len(keys)-1; i++ {
+// 	for j := i + 1; j < len(keys); j++ {
+// 		if keys[i] > keys[j] {
+// 			keys[i], keys[j] = keys[j], keys[i]
+// 		}
+// 	}
+// }
+fmt.Println("排序后的键:", keys)
+// 打印排序后的 map
+fmt.Println("排序后的 map:")
+for _, key := range keys {
+	fmt.Printf("key: %d, value: %d\n", key, mapVar[key])
+}
+```
+
+map 使用细节
+1. map 是引用类型。在一个函数接收 map，修改后，会直接修改原来的 map
+2. map 的容量达到后，再向 map 中增加元素，会自动扩容，并不会发生 panic，也就是说 map 能动态增长
+3. map 的 value 也经常使用 struct 类型，更适合管理复杂的数据
+```go
+// 定义一个结构体
+type Stu struct {
+	Name    string
+	Age     int
+	Address string
+}
+
+
+// map 的值用结构体
+students := make(map[string]Stu)
+// 创建学生
+stu1 := Stu{"tom", 18, "Beijing"}
+stu2 := Stu{"lisa", 18, "Chongqing"}
+students["no1"] = stu1
+students["no2"] = stu2
+fmt.Println(students)
+
+// 遍历
+for k, v := range students {
+	fmt.Println(k)
+	fmt.Println(v.Name)
+	fmt.Println(v.Age)
+	fmt.Println(v.Address)
+}
+```
+
+判断 key 是否在 map 中
+```go
+if v, ok := map1[key]; ok {
+	// exists
+}
+
+if map1[key] != nil {
+	// exists
+}
+```
+
+# 面向“对象”编程与结构体
+golang 的面向对象编程跟 python, c++, java 不同，没有类的概念，用结构体替代类（class）的概念，因此结构体类似于 class。
+
+golang 面向对象编程说明
+1. golang 支持面向对象编程(OOP)，但与传统的面向对象编程有区别，不是纯粹的面向对象语言，所以 golang 支持面向对象编程特性更合适
+2. golang 没有类 class，golang 的结构体和其他编程语言的类有相等的地位，可以理解golang是基于结构体来实现面向对象编程
+3. golang 面向对象编程非常简洁，去掉了传统面向对象编程的继承、方法重载、构造函数和析构函数、隐藏的this指针、self等
+4. golang 支持面向对象编程的继承、封装和多态的特性，只是实现方式和其他面向对象编程语言不同，比如继承：golang 没有 extends 关键字，继承是通过匿名字段来实现
+5. golang 面向对象编程很优雅，OOP本身就是语言类型系统(type system)的一部分，通过接口关联，耦合性低，也非常灵活。因此，golang 面向接口编程时非常重要的特性。
+
+## 结构体
+
+结构体是值类型。结构体字段（field），也叫属性，字段可以是基本数据类型、数组，也可以是引用类型。
+
+1. 结构体是自定义的数据类型，代表一类事物
+2. 结构体变量（实例）是具体的，代表一个具体变量
+
+字段的使用说明
+1. 字段声明语法同变量
+2. 字段的类型可以是基本类型、数组、引用类型
+3. 创建一个结构体变量后，如果没有给字段赋值，都对应一个零值（默认值），规则同前面讲的一样
+
+|类型|默认值|
+|---|---|
+|bool|false|
+|int|0|
+|string|""|
+|array [2]int|[0, 0]|
+|ptr *int| nil，表示没有分配内存空间|
+|slice []int |nil，表示没有分配内存空间|
+|map map[int]int |nil，表示没有分配内存空间|
+
+指针、切片、映射的默认值是 nil，表示还没有分配内存空间，如果需要使用，那么须先 make。
+
+4. 不同结构体变量的字段是独立的，互相不影响，一个结构体变量字段的更改，不影响另外一个。
+
+结构体创建方式
+```go
+// 方式一
+var cat1 Cat
+cat1.Name = "xiaobai"
+cat1.Age = 1
+cat1.Color = "white"
+fmt.Println(cat1)
+
+// 方式二
+cat2 := Cat{"xiaohua", 2, "color"}
+fmt.Println(cat2)
+
+// 方式三
+var cat3 *Cat = new(Cat)
+// golang 设计者为了程序员方便，底层进行了优化
+// 也可以用 cat3.Name = "xiaoqing"
+(*cat3).Name = "xiaoqing"
+fmt.Println(*cat3)
+
+// 方式四
+var cat4 *Cat = &Cat{}
+// var cat4 *Cat = &Cat{"xiaowang"}
+(*cat4).Name = "xiaowang"
+fmt.Println(*cat4)
+```
+第三种和第四种方式返回的是结构体指针。结构体指针访问字段的标注方式应该是 `(*结构体指针变量).字段名`，当 golang 为了开发人员方便，做了底层简化，可以使用 `结构体指针变量.字段名` 迎合开发人员。
+
+结构体使用细节
+0. 结构体中也可以不定义字段，即空的结构体
+1. 结构体的所有字段在内存中是连续的
+```go
+type Point struct {
+	x int
+	y int
+}
+
+type Rect struct {
+	leftUp    Point
+	rightDown Point
+}
+
+type Rect2 struct {
+	leftUp    *Point
+	rightDown *Point
+}
+
+// struct 字段在内存中是连续的
+rect := Rect{Point{1, 2}, Point{3, 4}}
+// rect 的四个int，在内存中是连续分布的
+// 0xc000018200 0xc000018208 0xc000018210 0xc000018218
+fmt.Println(&rect.leftUp.x, &rect.leftUp.y, &rect.rightDown.x, &rect.rightDown.y)
+
+rect2 := Rect2{&Point{10, 20}, &Point{30, 40}}
+// 0xc0000140a0 0xc0000140a8
+fmt.Println(&rect2.leftUp, &rect2.rightDown)
+```
+2. 结构体是用户单独定义的类型，和其他类型进行转换时，要求结构体的字段要完全一样（包括名字、个数和类型）
+```go
+type A struct {
+	Num int
+}
+
+type B struct {
+	Num int
+}
+
+// 结构体转换
+var a A
+var b B
+a = A(b)
+fmt.Println(a, b)
+```
+3. 结构体进行 type 重新定义（相当于取别名），golang 认为是新的数据类型，但是相互间可以强转
+```go
+type Student struct {
+	Name string
+	Age int
+}
+
+type Stu Student // 取别名
+
+func main() {
+	var stu1 Student
+	var stu2 Stu
+	stu2 = stu1 // error
+	stu2 = Stu(stu1) // right
+	fmt.Println(stu1, stu2)
+}
+
+
+type integer int
+
+var i integer = 10
+var j int = 20
+j = i // error
+j = int(i) // right
+```
+4. struct 的每个字段上，可以写上一个 tag，该 tag 可以通过反射机制获取，常见的使用场景就是序列号和反序列化
+```go
+type Dog struct {
+	Name  string `json:"name"`  // struct tag
+	Age   int    `json:"age"`
+	Color string `json:"color"`
+}
+
+// 将结构体序列号为json字符串
+dog1 := Dog{"xiaohei", 1, "gray"}
+jsonStr, err := json.Marshal(dog1)
+if err != nil {
+	fmt.Println("error")
+} else {
+	fmt.Println(jsonStr)
+	fmt.Printf("%q\n", string(jsonStr))
+}
+
+// "{\"name\":\"xiaohei\",\"age\":1,\"color\":\"gray\"}"
+```
+将大写的变量名使用 struct tag 反射为小写的字符串，方便传输。
+
+## 方法 Method
+在某些情况下，需要声明或定义方法。如 Person 结构体除了有字段年龄、姓名外， 还可能有一些行为，如跑步、学习等，这时就需要有方法来定义。
+
+golang 中方法是作用在指定的数据类型上（即和指定的数据类型绑定），因此（type）自定义类型都可以有方法，而不仅仅是结构体。
+```go
+type Dog struct {
+	Name  string `json:"name"` // struct tag
+	Age   int    `json:"age"`
+	Color string `json:"color"`
+}
+
+// 结构体 Dog 的方法
+func (dog Dog) Eat() {
+	fmt.Println(dog.Name, "啃骨头")
+}
+
+// 方法
+dog2 := Dog{"阿黄", 2, "yellow"}
+dog2.Eat()
+```
+1. Eat 方法和 Dog 类型绑定
+2. Eat 方法只能通过 Dog 类型的变量来调用，而不能直接调用，也不能使用其他类型变量来调用
+3. dog Dog 表示它属于哪个结构体
+
+### 方法的调用和传参机制原理
+方法的调用和传参机制，与函数基本一样，不一样的地方是方法调用时，也会将调用方法的变量，当做实参也传递给方法。
+
+```go
+func (instance Type) mathodName(参数列表) (返回值列表) {
+	方法体
+	return 返回值
+}
+```
+这里的 Type 不一定是结构体。如果没有返回值列表，可以不用 return.
+
+实例：
+
+```go
+type Circle struct {
+	radius float64
+}
+
+func (circle Circle) Area() float64 {
+	return math.Pi * math.Pow(circle.radius, 2)
+}
+
+// 计算圆的面积
+circle := Circle{4.0}
+area := circle.Area()
+fmt.Printf("圆的面积：%.3f\n", area)
+```
+
+方法注意事项
+1. 结构体类型是值类型，在方法调用中，遵守值类型的传递机制，是值拷贝传递方式
+2. 如果希望在方法中修改结构体变量的值，可以通过结构体指针的方式来处理
+```go
+func (circle *Circle) Area() float64 {
+	return math.Pi * math.Pow(circle.radius, 2) // 等价于下面，golang底层进行了优化
+	// return math.Pi * math.Pow((*circle).radius, 2)
+}
+
+circle := Circle{4.0}
+area := circle.Area() // 等价于下面，golang底层进行了优化
+// area := (&circle).Area()
+```
+3. golang 中的方法作用在指定的数据类型上（和指定的数据类型绑定），因此，对于自定义的类型都可以有方法，而不仅仅是结构体，比如 int, float64 等都可以有方法
+```go
+type integer int
+
+func (i integer) printi() {
+	fmt.Println(i)
+}
+
+func (i *integer) changei() {
+	i += 1
+	// *i += 1
+}
+
+func main() {
+	var i integer = 10
+	i.printi()
+
+	i.changei()
+	// (&i).changei()
+	fmt.Println(i) // i=11
+}
+```
+4. 方法的访问范围的控制规则和函数一样。方法名首字母小写，只能在本包中访问，方法名首字母大写，可以在本包和其他包访问
+5. 如果一个变量实现了 String() 这个方法，那么 fmt.Println 默认会调用这个变量的 String() 进行输出
+```go
+type Person struct {
+	Name string
+	Age  int
+}
+
+// 给 Person 实现 String() 方法
+func (person *Person) String() string {
+	str := fmt.Sprintf("Name=[%v], Age=[%v]\n", person.Name, person.Age)
+	return str
+}
+
+// String() 方法改变 fmt.Println() 的行为
+person := Person{
+	Name: "xujinzh",
+	Age:  18, // 最后一行也要有逗号
+}
+fmt.Println(&person) // Name=[xujinzh], Age=[18]
+// 如果没有实现 String() 方法，则打印的是 person 的地址
+```
+
+### 函数和方法的区别
+1. 调用方式不同
+```go
+// 函数调用：函数名（参数列表）
+// 方法调用：变量.方法名（参数列表）
+```
+2. 对于函数，参数为值类型时，不能将指针类型的数据直接传递，反之依然
+```go
+type Person struct {
+	Name string
+}
+
+// 函数
+// 值传递
+func test01(person Person) {
+	fmt.Println(person.Name)
+}
+
+// 指针引用传递
+func test02(person *Person) {
+	fmt.Println(person.Name)
+}
+
+func main() {
+	person := Person("tom")
+	test01(person) // right
+	// test01(&person) // error
+	test02(&person) // right
+	// test02(person) // error
+}
+```
+3. 对于方法（以struct方法为例），参数列表为值类型时，可以用指针类型变量调用，反之依然
+```go
+type Person struct {
+	Name string
+}
+
+func (person Person) test03() {
+	fmt.Println(person.Name)
+}
+
+func (person *Person) test04() {
+	fmt.Println(person.Name)
+}
+
+func main() {
+	person := Person{"jack"}
+	person.test03() // right
+	(&person).test03() // right
+	(&person).test04() // right
+	person.test04() // right
+
+	// 因为golang的底层优化，所以使用变量person和(&person)都可以，两者等价
+	// 具体传给方法的参数是值类型还是（指针）引用类型，看方法定义中参数的类型
+	// 如果方法定义中是值类型，那么传入值变量，即使(&person)也会底层转为person再传入
+	// 如果方法定义中是引用类型，那么传入指针引用变了，即使person也会底层转为(&person)再传入
+}
+```
+
+### 结构体初始化
+```go
+type Student struct {
+	Name string
+	Age int
+}
+
+var student1 = Student{"xiaoming", 18} // 初始化值的顺序必须和结构体参数对应上
+student2 := Student{"xiaowang", 19} // 初始化值的顺序必须和结构体参数对应上
+var student3 = Student{ // 初始化值的顺序可以不用和结构体参数对应上，因为已经指明
+	Age : 20,
+	Name : "xiaoai",
+}
+
+student4 := Student{ // 初始化值的顺序可以不用和结构体参数对应上，因为已经指明
+	Age : 20,
+	Name : "xiaohua",
+}
+
+// 返回结构体的指针类型
+var student5 *Student = &Student{"xiaoxiong", 21}
+
+student6 := &Student{
+	Name : "xiaoma",
+	Age : 22,
+}
+```
+
+## 工厂模式
+golang 的结构体没有构造函数，可以使用工程模式来解决这个问题。
+
+```go
+package model
+
+type Student struct {
+	Name string
+}
+```
+结构体 Student 的首字母是大写，如果要在其他包（如 main 包）中 Student 实例，引入 model 包后，就可以直接创建 Student 结构体变量。
+
+```go
+package model
+
+type student struct {
+	Name string
+}
+```
+
+但是，当首字母是小写（type student struct）时，就不可以使用了，此时可以采用工厂模式来解决。
+
+即，既想用小写的结构体名，又想在其他包中使用该结构体，可以用工厂模式。
+
+创建 model 包：
+```go
+package model
+
+type student struct { // 结构体名是小写
+	Name string
+	score float64  // 字段名也是小写
+}
+
+func (stu *student) GetScore() float64 {
+	return stu.score
+}
+
+// 因为 student 结构体首字母是小写，因此是只能在 model 包中使用
+// 使用工厂模式来解决
+func NewStudent(n string, s float64) *student {
+	return &student{
+		Name : n,
+		score : s,
+	}
+}
+```
+在 main 包中调用：
+```go
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	stu := model.NewStudent("xiaoming", 88.8) // 返回的是指针
+	fmt.Println(*stu)
+	fmt.Println(stu.Name, stu.GetScore) // 底层已转化
+}
+```
+
 
