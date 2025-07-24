@@ -2923,3 +2923,96 @@ func (person *Person) GetAge() {
 	return person.Age
 }
 ```
+
+### 继承
+继承（inheritance）可以解决代码复用。
+
+当多个结构体存在相同的属性或字段、方法时，可以从这些结构体中抽象出结构体，在该结构体中定义这些相同的属性和方法。
+
+其他结构体不需要重新定义这些属性和方法，只需嵌套一个匿名结构体即可。也就是说，**golang 中，如果一个 struct 嵌套了另一个匿名结构体，那么这个结构体可以直接访问匿名结构体的字段和方法，从而实现继承特性**。
+
+```go
+type Goods struct {
+	Name string
+	Price float64
+}
+
+type Book struct {
+	Goods // 嵌套匿名结构体, 即只有类型 Goods 没有变量名，如 goods
+	Writer string
+}
+```
+
+示例
+```go
+package main
+
+import (
+	"fmt"
+)
+
+type Student struct {
+	Name  string
+	Age   int
+	Score int
+}
+
+func (student *Student) ShowInfo() {
+	fmt.Printf("name=%q, age=%v, score=%v\n",
+		student.Name, student.Age, student.Score)
+}
+
+func (student *Student) SetScore(score int) {
+	student.Score = score
+}
+
+type Pupil struct {
+	Student // 匿名结构体
+}
+
+func (pupil *Pupil) Testing() {
+	fmt.Println("Pupil testing")
+}
+
+type Graduate struct {
+	Student // 匿名结构体
+}
+
+func (graduate *Graduate) Testing() {
+	fmt.Println("Graduate testing")
+}
+
+func main() {
+	pupil := &Pupil{}
+	pupil.Student.Name = "xiaoming"
+	pupil.Student.Age = 8
+	pupil.Student.SetScore(99)
+	pupil.Testing()
+	pupil.Student.ShowInfo()
+
+	pupil1 := &Pupil{}
+	pupil1.Name = "xiaohua"
+	pupil1.Age = 9
+	pupil1.SetScore(100)
+	pupil.Testing()
+	pupil.Student.ShowInfo()
+
+	graduate := &Graduate{}
+	graduate.Student.Name = "yuz"
+	graduate.Student.Age = 28
+	graduate.Student.SetScore(100)
+	graduate.Testing()
+	graduate.Student.ShowInfo()
+}
+```
+
+继承的好处
+1. 代码的复用性提高了
+2. 代码的扩展性和维护性提高了
+
+
+继承的细节
+1. 结构体可以使用嵌套匿名结构体使用的字段和方法，即首字母大写或小写的字段、方法都可以使用
+2. 匿名结构体字段访问可以简化
+3. 当结构体和匿名结构体有相同的字段或者方法时，编译器采用就近访问原则，先在本结构体中找字段、方法，没有再去匿名结构体中找。如希望访问匿名结构体的字段和方法，可以通过匿名结构体名来区分
+
