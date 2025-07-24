@@ -3015,4 +3015,733 @@ func main() {
 1. 结构体可以使用嵌套匿名结构体使用的字段和方法，即首字母大写或小写的字段、方法都可以使用
 2. 匿名结构体字段访问可以简化
 3. 当结构体和匿名结构体有相同的字段或者方法时，编译器采用就近访问原则，先在本结构体中找字段、方法，没有再去匿名结构体中找。如希望访问匿名结构体的字段和方法，可以通过匿名结构体名来区分
+```go
+package main
+
+import (
+	"fmt"
+)
+
+type A struct {
+	Name string
+	age  int
+}
+
+func (a *A) SayOk() {
+	fmt.Println("A SayOk", a.Name)
+}
+
+func (a *A) hello() {
+	fmt.Println("A hello", a.Name)
+}
+
+type B struct {
+	A
+	Name string // B 结构体中也有该字段，如果创建B的实例，想要赋值A结构体中该Name字段的值，需要显示指定 A.Name，否则就近原则默认访问B.Name
+}
+
+func (b *B) SayOk() {
+	fmt.Println("B sayok", b.Name)
+}
+
+func main() {
+	// var b B
+	// b.A.Name = "tome"
+	// b.A.age = 10
+	// b.A.SayOk()
+	// b.A.hello()
+
+	// // 下面简化写
+	// b.Name = "smith"
+	// b.age = 20
+	// b.SayOk()
+	// b.hello()
+
+	var b B
+	b.Name = "jack" // 使用B的字段
+	b.age = 100     // 使用A的字段
+	b.SayOk()       // 使用B的方法
+	b.hello()       // 使用A的方法，但是没有给 b.A.Name 赋值，所有a.Name为默认值空字符串。可以显示赋值解决
+	b.A.Name = "lucy"
+	b.hello()
+}
+```
+4. 结构体嵌套两个或多个匿名结构体时，如果匿名结构体有相同的字段、方法（同时结构体本身没有同名的字段、方法），在访问时，必须明确指定匿名结构体名字，否则编译报错
+```go
+package main
+
+import (
+	"fmt"
+)
+
+type A struct {
+	Name string
+	age  int
+}
+
+type B struct {
+	Name  string
+	Score float64
+}
+
+type C struct {
+	// A和B同级，不分先后
+	A
+	B
+}
+
+func main() {
+	fmt.Println("hello")
+	var c C
+	c.Name = "tom" // error，编译器不能确定到底是A还是B结构体里的字段
+}
+```
+5. 如果一个结构体嵌套了一个有名结构体，这种模式叫做组合，如果是组合关系，那么在访问组合结构体的字段、方法时，必须带上结构体的名字
+```go
+package main
+
+import (
+	"fmt"
+)
+
+type A struct {
+	Name string
+	age  int
+}
+
+type B struct { // B 和 A 组合
+	a A // 有名结构体
+}
+
+func main() {
+	fmt.Println("hello")
+	b := B{}
+	// b.Name = "jack" // error，在有名结构体中，必须指定结构体名 b.A.Name，因为它不会往里再找，认为只有a
+	b.a.Name = "jack"
+	b.a.age = 18
+	fmt.Println(b)
+}
+```
+6. 嵌套匿名结构体后，可以在创建结构体变量时，直接指定各个匿名结构体字段的值。嵌套多个结构体也叫多重继承。
+```go
+package main
+
+import (
+	"fmt"
+)
+
+type Goods struct {
+	Name  string
+	Price float64
+}
+
+type Brand struct {
+	Name    string
+	Address string
+}
+
+type TV struct {
+	Goods
+	*Brand
+}
+
+func main() {
+	fmt.Println()
+	tv := TV{
+		Goods{"电视机SN30239", 5000.9},
+		&Brand{"海尔", "shandong"},
+	}
+	fmt.Println(tv.Goods)
+	fmt.Println(*tv.Brand)
+}
+```
+
+7. 匿名字段可以用基本数据类型，如int
+```go
+package main
+
+import (
+	"fmt"
+)
+
+type Monster struct {
+	Name string
+	Age  int
+}
+
+type E struct {
+	Monster
+	int // 匿名字段，基本数据类型；只能有一个同名的匿名字段
+	n   int
+}
+
+func main() {
+	fmt.Println()
+	e := E{}
+	e.Monster.Name = "hulijing"
+	e.Monster.Age = 500
+	e.int = 10
+	e.n = 10
+	fmt.Println(e)
+}
+```
+
+# 接口
+golang 中多态主要是通过接口来实现的。接口类型可以定义一组方法（但不能包含任何变量），但是这些方法不需要也不能在接口定义时实现。某个自定义类型（比如结构体）要使用这个接口的时候，需要把方法实现出来。
+
+```go
+type 接口名 interface {
+	method1(参数列表) 返回值列表
+	method2(参数列表) 返回值列表
+}
+
+// 接口实现，必须包含接口中所有方法的实现
+func (实例名 自定义类型) method1(参数列表) 返回值列表 {
+	// 方法具体实现
+}
+
+func (实例名 自定义类型) method2(参数列表) 返回值列表 {
+	// 方法具体实现
+}
+```
+- 接口里的所有方法都没有方法体，即没有具体实现细节。接口体现了程序设计的多态和高内聚低耦合的思想
+- golang 中的接口，**不需要显式实现**。只要一个变量或实例含有接口类型的所有方法，那么这个变量或实例就是实现了这个接口。因此，golang 中没有 implement 这样的关键字
+
+接口编程的基本例子
+```go
+package main
+
+import (
+	"fmt"
+)
+
+type USB interface {
+	// 声明或定义了两个没有实现的方法
+	Start()
+	Stop()
+}
+
+type Phone struct {
+	Name string
+}
+
+// 让 Phone 实现 USB 接口的（所有）方法
+func (phone Phone) Start() {
+	fmt.Printf("%v started\n", phone.Name)
+}
+
+func (phone Phone) Stop() {
+	fmt.Printf("%v stoped\n", phone.Name)
+}
+
+type Camera struct {
+	Weight float64
+}
+
+// 让 Camera 实现 USB 接口的（所有）方法
+func (camera Camera) Start() {
+	fmt.Printf("Camera weighing %v is started\n", camera.Weight)
+}
+
+func (camera Camera) Stop() {
+	fmt.Printf("Camera weighing %v is stoped\n", camera.Weight)
+}
+
+type Computer struct {
+}
+
+// 编写一个方法 working 方法，接收一个 USB 接口类型的变量
+// 只要是实现了 USB 接口（指实现了USB接口声明的所有方法）
+func (computer Computer) Working(usb USB) {
+	usb.Start()
+	usb.Stop()
+}
+
+func main() {
+	fmt.Println()
+	// 创建接口体变量
+	computer := Computer{}
+	phone := Phone{"iPhone"}
+	camera := Camera{2.3}
+
+	computer.Working(phone)
+
+	computer.Working(camera)
+}
+```
+
+接口的细节：
+- 接口本身不能创建实例（不像结构体），但是可以指向一个实现了该接口的自定义类型的实例或变量
+```go
+type Ainterface interface {
+	Say()
+}
+
+type Stu struct {
+	Name string
+}
+
+func (stu Stu) Say() {
+	fmt.Println(stu.Name, "say something")
+}
+
+func main() {
+	var stu Stu{"xiaoming"} // 该结构体实现了接口 Ainterface 的 Say() 方法
+	var a Ainterface = stu
+	a.Say()
+}
+
+```
+- 接口中所有的方法都没有方法体，即没有具体实现方法
+- 在 golang 中，一个自定义类型需要将某个接口的所有方法都实现，我们才说这个自定义类型实现了接口
+- 一个自定义类型只有实现了某个接口，才能将该自定义类型的实例或变量赋给接口类型
+- 只要是自定义数据类型，就可以实现接口，不仅仅是结构体类型
+```go
+type Ainterface interface {
+	Say()
+}
+
+type integer int
+
+func (i integer) Say() {
+	fmt.Println(i, "say something")
+}
+
+func main() {
+	var i integer = 10 // 该结构体实现了接口 Ainterface 的 Say() 方法
+	var b Ainterface = i
+	b.Say()
+}
+```
+- 一个自定义类型可以实现多个接口
+```go
+type A interface {
+	Say()
+}
+
+type B interface {
+	Hello()
+}
+
+type Stu struct {
+	Name string
+}
+
+// Stu 既实现了A接口也实现了B接口
+func (stu Stu) Say() {
+	fmt.Println(stu.Name, "say something")
+}
+
+func (stu Stu) Hello() {
+	fmt.Println(stu.Name, "hello world")
+}
+
+func main() {
+	var monster Monster
+	var a A = monster
+	var b B = monster
+	a.Say() // right
+	a.Hello() // error
+	b.Hello() // right
+	b.Say() // error
+}
+```
+- golang 接口中不能有任何变量
+```go
+type A interface {
+	Say() // right
+	// Name string // error
+}
+```
+- 一个接口A可以继承多个别的接口B、C，这时如果要实现接口A，也必须实现接口B、C的所有方法。但是B和C中不能定义相同的方法
+```go
+type B interface {
+	test01()
+}
+
+type C interface {
+	// test01() // error，编译不通过
+	test02()
+}
+
+type A interface { // 接口继承
+	B
+	C
+	test03()
+}
+
+type Stu struct {
+
+}
+
+func (stu Stu) test01() {
+
+}
+
+func (stu Stu) test02() {
+
+}
+
+func (stu Stu) test03() {
+
+}
+
+func main() {
+	var stu Stu
+	var a A = stu
+	a.test01()
+	a.test02()
+	a.test03()
+}
+```
+- 接口类型默认是一个指针(引用类型)，如果没有对接口初始化就使用，那么会输出 nil
+- 空接口 `interface{}` 没有任何方法，所以所有类型都实现了空接口，即可以把任何一种数据类型变量赋给空接口
+```go
+type T interface {}
+
+type Stu struct {
+	Name string
+}
+
+func main() {
+	var stu Stu
+	var t T = stu // Stu 默认是实现了空接口
+	var t2 interface{} = stu // right
+	var num float64 = 8.8
+	t2 = num // right
+	t1 = num // right
+}
+```
+
+- 实现接口时，自定义类型实现时如果是引用类型，那么调用时也需要用指针
+```go
+type Usb interface {
+	Say()
+}
+
+type Stu struct {
+
+}
+
+func (stu *Stu) Say() {
+
+}
+
+func main() {
+	var stu Stu = Stu{}
+	var u Usb = stu // error，会报 Stu 类型没有实现 Usb 接口
+	var u Usb = &stu // right
+}
+```
+
+对接口体切片排序
+```go
+package main
+
+import (
+	"fmt"
+	"math/rand"
+	"sort"
+)
+
+type Hero struct {
+	Name string
+	Age  int
+}
+
+// hero 结构体切片类型
+type HeroSlice []Hero
+
+// 实现 Interface 接口的三个方法
+func (heroslice HeroSlice) Len() int {
+	return len(heroslice)
+}
+
+// 按 hero 的年龄从小到大排序
+func (heroslice HeroSlice) Less(i, j int) bool {
+	return heroslice[i].Age < heroslice[j].Age
+	// return heroslice[i].Name < heroslice[j].Name
+}
+
+func (heroslice HeroSlice) Swap(i, j int) {
+	heroslice[i], heroslice[j] = heroslice[j], heroslice[i]
+}
+
+func main() {
+	var intSlice = []int{0, -1, 10, 7, 90}
+	// 除了手撕冒泡排序等算法外，还可以用系统函数
+	sort.Ints(intSlice) // 切片是引用类型
+	fmt.Println(intSlice)
+
+	// 结构体切片排序
+	var heroSlices HeroSlice
+	for i := 0; i < 10; i++ {
+		hero := Hero{
+			Name: fmt.Sprintf("hero-%d", rand.Intn(100)),
+			Age:  rand.Intn(100),
+		}
+		heroSlices = append(heroSlices, hero)
+	}
+
+	// 排序前顺序
+	for _, v := range heroSlices {
+		fmt.Println(v)
+	}
+	// 排序
+	sort.Sort(heroSlices)
+	// 排序后顺序
+	fmt.Println("排序后")
+	for _, v := range heroSlices {
+		fmt.Println(v)
+	}
+}
+```
+
+## 多态
+ 接口体现多态的两种形式
+ ### 多态参数
+ 例子参见接口章节开始时的电话和相机的例子。在 USB 接口例子中，`func (computer Computer) Working(usb USB)` 既可以接收 Phone 结构体，又可以接收 Camera 结构体。
+
+ ### 多态数组
+ 在接口数组中，存放不同类型的接口体，如 Phone 结构体，Camera 结构体
+ ```go
+package main
+
+import (
+	"fmt"
+)
+
+type USB interface {
+	// 声明或定义了两个没有实现的方法
+	Start()
+	Stop()
+}
+
+type Phone struct {
+	Name string
+}
+
+// 让 Phone 实现 USB 接口的（所有）方法
+func (phone Phone) Start() {
+	fmt.Printf("%v started\n", phone.Name)
+}
+
+func (phone Phone) Stop() {
+	fmt.Printf("%v stoped\n", phone.Name)
+}
+
+type Camera struct {
+	Weight float64
+}
+
+// 让 Camera 实现 USB 接口的（所有）方法
+func (camera Camera) Start() {
+	fmt.Printf("Camera weighing %v is started\n", camera.Weight)
+}
+
+func (camera Camera) Stop() {
+	fmt.Printf("Camera weighing %v is stoped\n", camera.Weight)
+}
+
+func main() {
+	fmt.Println()
+	// 创建接口数组
+	var usb [3]USB
+	usb[0] = Phone{"苹果"}
+	usb[1] = Phone{"小米"}
+	usb[2] = Camera{3.14}
+	fmt.Println(usb)
+}
+ ```
+
+ ## 类型断言
+由于接口时一般类型，不知道具体类型，如果要转成具体类型，就需要使用类型断言。
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+type Point struct {
+	x int
+	y int
+}
+
+func main() {
+	var a interface{}
+	var point Point = Point{1, 2}
+	a = point
+	var b Point
+	b = a.(Point) // 类型断言
+	// b = a // error
+	fmt.Println(b)
+	fmt.Println(a)
+
+	// 其他案例
+	var x interface{}
+	var t float32 = 1.1
+	x = t
+	y := x.(float32)
+	// y := x.(float64) // error
+	fmt.Printf("%T, %v\n", y, y)
+}
+```
+进行类型断言时，如果类型不匹配，就会报错 panic，因此进行类型断言时，要确保原来的空接口执行的就是断言的类型。
+
+可以带上检测机制：
+```go
+// 断言检测
+var m interface{}
+var n float64 = 3.14
+m = n
+// k, ok := m.(float64) // 带检测 right
+// k, ok := m.(float32) // 带检测 right
+// if ok {
+// 	fmt.Printf("%T, %v\n", k, k)
+// } else {
+// 	fmt.Println("convert failed")
+// }
+
+if k, ok := m.(float32); ok {
+	fmt.Printf("%T, %v\n", k, k)
+} else {
+	fmt.Println("convert failed")
+}
+```
+
+类型断言的应用案例
+```go
+package main
+
+import (
+	"fmt"
+)
+
+type USB interface {
+	// 声明或定义了两个没有实现的方法
+	Start()
+	Stop()
+}
+
+type Phone struct {
+	Name string
+}
+
+// 让 Phone 实现 USB 接口的（所有）方法
+func (phone Phone) Start() {
+	fmt.Printf("%v started\n", phone.Name)
+}
+
+func (phone Phone) Stop() {
+	fmt.Printf("%v stoped\n", phone.Name)
+}
+
+func (phone Phone) Call() {
+	fmt.Printf("%v calling \n", phone.Name)
+}
+
+type Camera struct {
+	Weight float64
+}
+
+// 让 Camera 实现 USB 接口的（所有）方法
+func (camera Camera) Start() {
+	fmt.Printf("Camera weighing %v is started\n", camera.Weight)
+}
+
+func (camera Camera) Stop() {
+	fmt.Printf("Camera weighing %v is stoped\n", camera.Weight)
+}
+
+type Computer struct {
+}
+
+// 编写一个方法 working 方法，接收一个 USB 接口类型的变量
+// 只要是实现了 USB 接口（指实现了USB接口声明的所有方法）
+func (computer Computer) Working(usb USB) {
+	usb.Start()
+	// 如果USB指向Phone结构体变量，则需要调用Call方法
+	if phone, ok := usb.(Phone); ok {
+		phone.Call()
+	}
+	usb.Stop()
+}
+
+func main() {
+	fmt.Println()
+	// 创建接口体数组
+	var usbArr [3]USB
+	usbArr[0] = Phone{"小米"}
+	usbArr[1] = Phone{"苹果"}
+	usbArr[2] = Camera{3.14}
+
+	computer := Computer{}
+	for _, device := range usbArr {
+		computer.Working(device)
+	}
+}
+```
+类型断言的应用2
+```go
+package main
+
+import (
+	"fmt"
+)
+
+type Student struct{}
+type USB interface{}
+
+func TypeJudge(items ...interface{}) {
+
+	for index, x := range items {
+		switch x.(type) {
+		case bool:
+			fmt.Printf("第%v个参数是bool类型，值是%v\n", index, x)
+		case float32:
+			fmt.Printf("第%v个参数是float32类型，值是%v\n", index, x)
+		case float64:
+			fmt.Printf("第%v个参数是float64类型，值是%v\n", index, x)
+		case int, int32, int64:
+			fmt.Printf("第%v个参数是整数类型，值是%v\n", index, x)
+		case string:
+			fmt.Printf("第%v个参数是string类型，值是%v\n", index, x)
+		default:
+			fmt.Printf("第%v个参数 类型不确定，值是%v\n", index, x)
+		}
+	}
+}
+
+func main() {
+	fmt.Println()
+	var n1 bool = true
+	var n2 float32 = 2.2
+	var n3 float64 = 3.3
+	var n4 int = 30
+	var n5 string = "xjz"
+	n6 := "北京"
+	n7 := Student{}
+	n77 := &Student{}
+	var n8 USB
+	TypeJudge(n1, n2, n3, n4, n5, n6, n7, n77, n8)
+}
+```
+
+# 项目练习-家庭收支记账软件
+对于一个200-500万的项目，流程步骤如下：
+1. 需求分析
+2. 设计阶段
+3. 实现阶段
+4. 测试阶段
+5. 实施阶段
+6. 维护阶段
+
+|条目|需求分析|设计阶段|实现阶段|测试阶段|实施阶段|维护阶段|
+|---|---|---|---|---|---|---|
+|时间|30%时间|20%时间|20%时间|共用30%|共用30%|共用30%|
+|负责人|需求分析师|项目经理或架构师|软件工程师（码农）|软件测试工程师（如用友）|实施工程师|一般没有专业人员，对接人|
+|职位要求|懂技术、懂业务|架构（开发语言、架构、数据库、操作系统）、选人|实现各个模块（golang, python, c++, java etc)|黑盒测试、白盒测试（写代码）、灰盒测试|上线服务器、配置||
+|结果|需求分析报告|设计文档（类图、**数据库设计、界面原型**）|代码|测试大纲、测试用例、测试文档|||
 
