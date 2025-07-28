@@ -46,9 +46,52 @@ func (cv *customerView) add() {
 
 	// id 号没有让用户输入，是唯一的，需要系统分配
 	customer := model.FactoryCustomer2(name, gender, age, phone, email)
-	cv.customerService.Add(customer)
+	if cv.customerService.Add(customer) {
+		fmt.Println("-----------------------添加完成-----------------------")
+	} else {
+		fmt.Println("-----------------------添加失败-----------------------")
+	}
 
 	fmt.Println("编号\t姓名\t性别\t年龄\t电话\t邮箱")
+
+}
+
+// 得到用户的输入，删除ID对应的客户
+func (cv *customerView) delete() {
+	fmt.Println("---------------------删除客户---------------------")
+	fmt.Println("请选择待删除客户编号(-1退出): ")
+	id := -1
+	fmt.Scanln(&id)
+	if id == -1 {
+		return // 放弃删除
+	}
+	fmt.Println("确认是否删除(y/n): ")
+	choice := ""
+	fmt.Scanln(&choice)
+	if choice == "y" {
+		// 调用 customerService 的 Delete 方法
+		if cv.customerService.Delete(id) {
+			fmt.Println("---------------------删除成功---------------------")
+		} else {
+			fmt.Println("-----------------删除失败，ID不存在----------------")
+		}
+	}
+
+}
+
+// 退出软件
+func (cv *customerView) exit() {
+	fmt.Println("确认是否退出(y/n): ")
+	for {
+		fmt.Scanln(&cv.key)
+		if cv.key == "y" || cv.key == "n" {
+			break
+		}
+		fmt.Println("你输入有误，确认是否退出(y/n): ")
+	}
+	if cv.key == "y" {
+		cv.loop = false
+	}
 
 }
 
@@ -70,12 +113,13 @@ func (cv *customerView) mainMenu() {
 		case "2":
 			fmt.Println("修改客户")
 		case "3":
-			fmt.Println("删除客户")
+			// fmt.Println("删除客户")
+			cv.delete()
 		case "4":
 			// fmt.Println("客户列表")
 			cv.list()
 		case "5":
-			cv.loop = false
+			cv.exit()
 		default:
 			fmt.Println("输入有误，请重新输入")
 		}
