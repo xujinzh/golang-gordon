@@ -3980,31 +3980,7 @@ func main() {
 3. 项目采用分级菜单方式
 ## 项目界面
 ```html
----------------客户信息管理软件---------------
-               1 添加客户
-               2 修改客户
-               3 删除客户
-               4 客户列表
-               5 退    出
-请选择(1-5): 5
-确认是否退出(y/n): 
-n
----------------客户信息管理软件---------------
-               1 添加客户
-               2 修改客户
-               3 删除客户
-               4 客户列表
-               5 退    出
-请选择(1-5): 5
-确认是否退出(y/n): 
-o
-你输入有误，确认是否退出(y/n): 
-y
-你退出了系统
 
-╭╴jinzhongxu in jinzhongxu-PowerEdge-R740 at golang-gordon/xujinzh/xgo18CustomManager/view 🍣 main 📝 ×3 🐏 64GiB/282GiB | 0B/2GiB 
-╰─Monday 2025-07-28 17:54:44 -> go run .
-ok
 ---------------客户信息管理软件---------------
                1 添加客户
                2 修改客户
@@ -4356,3 +4332,942 @@ func (customer Customer) GetInfo() string {
 ```
 
 # 文件操作
+文件是数据源（保存数据的地方）的一种，最主要的作用是保存数据，常见的如 word, txt, mp4, aac 等，可以保存文字、视频和声音等。
+
+文件在程序中是以流的形式来操作的。以 golang 程序为中心，流是数据在数据源（文件）和 golang 程序（内存）之间经历的路径，输入流是数据从数据源到程序的路径，输出流是数据从程序到数据源的路径。
+
+## 打开文件关闭文件
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	fmt.Println("ok")
+	f, err := os.Open("./data/text.txt")
+	if err != nil {
+		fmt.Println("打开失败")
+	} else {
+		fmt.Println("打开成功")
+		fmt.Println(f)
+	}
+
+	err = f.Close()
+
+	if err != nil {
+		fmt.Println("关闭失败")
+	} else {
+		fmt.Println("关闭成功")
+	}
+}
+
+```
+
+## 读取文件
+
+### 带缓冲的读取
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"io"
+	"os"
+)
+
+func main() {
+	f, err := os.Open("../data/text.txt")
+	if err != nil {
+		fmt.Println("文件打开失败")
+	}
+	// 函数退出时，及时关闭文件句柄
+	defer f.Close()
+
+	// 创建 Reader，默认缓冲 4096
+	reader := bufio.NewReader(f)
+	// 循环读取文件内容
+	for {
+		str, err := reader.ReadString('\n') // 读到字符'\n'就结束
+		if err == io.EOF {                  // io.EOF代表文件末尾
+			break
+		} else if err != nil {
+			fmt.Println("读取错误", err)
+		} else {
+			// 输出内容
+			fmt.Print(str) // str 带 '\n'
+		}
+
+	}
+	fmt.Println("文件读取结束...")
+}
+```
+
+### 读取整个文件
+使用 `ioutil.ReadFile`（go 1.16前）、`os.ReadFile`（go 1.16后） 一次将整个文件读入到内存中，这种方式适用于文件不大的情况。
+```go
+func ReadFile(filename string) ([]byte, error)
+```
+ReadFile 从 filename 指定的文件中读取数据并返回文件的内容。成功的调用返回的 err 为 nil 而非 EOF. 因为函数定义为读取整个文件，它不会将读取返回的 EOF 视为应报告的错误。
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	fmt.Println()
+	// ioutil.ReadFile一次性将文件读取到位
+	filepath := "../data/text.txt"
+	content, err := os.ReadFile(filepath) // 因为没有显示的 Open 该文件，因此也不需要显示的 Close 该文件
+	if err != nil {
+		fmt.Println(err)
+	}
+	for _, c := range content {
+		fmt.Println(c)
+		fmt.Printf("%c\n", c)
+	}
+	fmt.Printf("%v", string(content))
+}
+
+```
+
+## 写入文件
+### 带缓冲写文件
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+)
+
+func main() {
+	fmt.Println()
+	// 创建一个新文件 "../data/textWriterBuffer.txt"，并写入5句 hello, gordon
+	filepath := "../data/textWriterBuffer.txt"
+	f, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		fmt.Printf("open file err=%v\n", err)
+	}
+
+	// 及时关闭文件，防止内存泄露
+	defer f.Close()
+
+	// 写入5句 hello, gordon
+	str := "hello, Gordon"
+	// 使用带缓冲的 writer
+	writer := bufio.NewWriter(f)
+	for i := 0; i < 5; i++ {
+		writer.WriteString(str)
+		writer.WriteString("\r\n")
+	}
+	// 因为wirter是带缓冲，因此在调用 writerstring 方法时，其实内容是写入到缓冲的，不是写入到磁盘
+	// 还需要调用 flush 方法写入到磁盘，否则文件中没有数据
+	err = writer.Flush()
+	if err != nil {
+		fmt.Println("flush失败")
+	}
+}
+
+```
+
+### 覆盖写文件
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+)
+
+func main() {
+	// 打开一个已经存在的文件，将原来的内容覆盖成新内容：你好，月球
+	filepath := "../data/textWriterBuffer.txt"
+	f, err := os.OpenFile(filepath, os.O_WRONLY|os.O_TRUNC, 0666)
+	if err != nil {
+		fmt.Printf("open file err=%v", err)
+	}
+	// 及时关闭文件句柄
+	defer f.Close()
+
+	// 准备写入的内容
+	str := "你好，月球"
+	// 使用带缓冲的写
+	writer := bufio.NewWriter(f)
+	for i := 0; i < 5; i++ {
+		writer.WriteString(str)
+		writer.WriteString("\r\n")
+	}
+	// flush缓冲
+	err = writer.Flush()
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+```
+
+### 追加写文件
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+)
+
+func main() {
+	fmt.Println()
+	// 打开一个已经存在的文件，在原来的内容追加内容：hell0, moon
+	filepath := "../data/textWriterBuffer.txt"
+
+	f, err := os.OpenFile(filepath, os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Println("打开文件失败", err)
+	}
+
+	defer f.Close()
+
+	// 带缓冲写文件，先写入到缓冲区
+	str := "hello, moon"
+	writer := bufio.NewWriter(f)
+	for i := 0; i < 5; i++ {
+		writer.WriteString(str)
+		writer.WriteString("\r\n")
+	}
+
+	// flush缓冲到磁盘
+	err = writer.Flush()
+	if err != nil {
+		fmt.Println("flush err=", err)
+	}
+}
+
+```
+
+## 同时读写
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"io"
+	"os"
+)
+
+func main() {
+	// 打开一个存在的文件，读里面的内容并输出到终端，同时可以写入内容：are you ok?
+	filepath := "../data/textWriterBuffer.txt"
+
+	f, err := os.OpenFile(filepath, os.O_RDWR|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Println("err", err)
+	}
+
+	defer f.Close()
+
+	// 先读取原来的内容，并显示在终端
+	reader := bufio.NewReader(f)
+	for {
+		strRead, errRead := reader.ReadString('\n') // 一行的结束标志为 \n
+		if errRead == io.EOF {                      // 读到文件的末尾
+			break
+		} else if errRead != nil && errRead != io.EOF {
+			fmt.Println("err=", errRead)
+		} else {
+			fmt.Print(strRead)
+		}
+
+	}
+
+	// 再写入
+	strWrite := "are you ok?"
+	writer := bufio.NewWriter(f)
+	for i := 0; i < 5; i++ {
+		writer.WriteString(strWrite)
+		writer.WriteString("\r\n")
+	}
+
+	// flush 缓冲
+	errFlush := writer.Flush()
+	if errFlush != nil {
+		fmt.Println("flush err=", errFlush)
+	}
+
+}
+
+```
+
+## 读一个文件写入到另一个文件
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	// 将 ../data/textWriterBuffer.txt 读取并将内容写入到 ../data/textReadWrite.txt
+	filepathRead := "../data/textWriterBuffer.txt"
+	filepathWrite := "../data/textReadWrite.txt"
+	// 读取文件，隐式打开，不需要显示关闭
+	content, err := os.ReadFile(filepathRead)
+	if err != nil {
+		fmt.Println("err=", err)
+	}
+	// 写入文件
+	errWrite := os.WriteFile(filepathWrite, content, 0666)
+	if errWrite != nil {
+		fmt.Println("write err=", err)
+	}
+}
+
+```
+
+## 判断文件存在性
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func IsFileExist(filepath string) (bool, error) {
+	_, err := os.Stat(filepath)
+	if err == nil {
+		// 文件存在
+		return true, nil
+	} else if os.IsNotExist(err) {
+		// 文件不存在
+		return false, nil
+	} else {
+		// 不能判断文件是否存在
+		return false, err
+	}
+}
+
+func main() {
+	fmt.Println()
+	// 判断文件是否存在
+	filepath := "../data/text.txt"
+	b, _ := IsFileExist(filepath)
+	if b {
+		fmt.Printf("%q 存在\n", filepath)
+	} else {
+		fmt.Printf("%q 不存在\n", filepath)
+	}
+
+}
+
+```
+
+## 拷贝文件
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"io"
+	"os"
+)
+
+func CopyFile(dstFileName string, srcFileName string) (written int64, err error) {
+	// 打开源文件
+	f, err := os.Open(srcFileName)
+	if err != nil {
+		fmt.Println("open src file err=", err)
+	}
+	defer f.Close()
+	// 获取 reader
+	reader := bufio.NewReader(f)
+
+	// 打开目标文件
+	f_writer, err_writer := os.OpenFile(dstFileName, os.O_WRONLY|os.O_CREATE, 0666)
+	if err_writer != nil {
+		fmt.Println("open dst file err=", err_writer)
+	}
+	defer f_writer.Close()
+	// 获取writer
+	writer := bufio.NewWriter(f_writer)
+
+	return io.Copy(writer, reader)
+
+}
+
+func main() {
+	// 将 ../data/flower.webp 拷贝到 ../data/flower-copy.webp
+	srcFileName := "../data/flower.webp"
+	dstFileName := "../data/flower-copy.webp"
+	w, e := CopyFile(dstFileName, srcFileName)
+	if e != nil {
+		fmt.Println("err=", e)
+	} else {
+		fmt.Println("拷贝完成")
+		fmt.Println(w)
+	}
+
+}
+
+```
+
+## 文件字符统计
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"io"
+	"os"
+)
+
+type CharCount struct {
+	EngCount   int // 英文的个数
+	NumCount   int // 数字的个数
+	SpaceCount int // 空格的个数
+	OtherCount int // 其他的个数
+}
+
+func main() {
+	fmt.Println()
+	// 统计一个文件中有多少个英文、数字、空格和其他字符
+	// 思路：每读取一行统计一次，然后将结果保存到一个结构体
+	filename := "../data/text.txt"
+	f, err := os.Open(filename)
+	if err != nil {
+		fmt.Println("err=", err)
+	}
+	defer f.Close()
+
+	// CharCount实例
+	var count CharCount
+	// 创建一个reader
+	reader := bufio.NewReader(f)
+	// 循环读取内容
+	for {
+		str, err := reader.ReadString('\n')
+		if err == io.EOF {
+			break
+		}
+		// str = []rune(str) // 可以处理中文字符
+		// 遍历 str，进行统计
+		for _, v := range str {
+			// fmt.Println(v)
+			switch {
+			case v >= 'a' && v <= 'z':
+				fallthrough // 穿透
+			case v >= 'A' && v <= 'Z':
+				count.EngCount++
+			case v >= '0' && v <= '9':
+				count.NumCount++
+			case v == ' ':
+				count.SpaceCount++
+			default:
+				count.OtherCount++
+			}
+
+		}
+	}
+	// 输出统计结果
+	fmt.Printf("英文字符的个数%v，数字的个数%v，空格的个数%v，其他字符个数%v\n", count.EngCount, count.NumCount, count.SpaceCount, count.OtherCount)
+}
+
+```
+
+# 命令行参数
+
+## 按照参数顺序
+`os.Args` 是一个 string 切片，用来存储所有的命令行参数，第一个参数是源文件
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	fmt.Println("命令行的参数有", len(os.Args))
+	// 遍历os.Args切片，得到每一个命令行参数值
+	for i, v := range os.Args {
+		fmt.Printf("args[%v]=%q\n", i, v)
+	}
+}
+
+```
+
+运行命令
+```bash
+go run main.go tom /disk0/codes/golang-gordon/data/gordon.jpg 999
+
+```
+解析结果
+```bash
+命令行的参数有 4
+args[0]="/tmp/go-build4143543334/b001/exe/main"
+args[1]="tom"
+args[2]="/disk0/codes/golang-gordon/data/gordon.jpg"
+args[3]="999"
+```
+
+## 指定参数名
+flag 包解析命令行参数，可以根据参数
+```go
+package main
+
+import (
+	"flag"
+	"fmt"
+)
+
+func main() {
+	// 定义几个变量，用于接收命令行参数
+	var user string
+	var passwd string
+	var host string
+	var port int
+
+	flag.StringVar(&user, "u", "", "用户名，默认为空")
+	flag.StringVar(&passwd, "p", "", "密码，默认为空")
+	flag.StringVar(&host, "h", "localhost", "主机名，默认为localhost")
+	flag.IntVar(&port, "port", 3306, "端口号，默认为3306")
+
+	// 必须调用转换
+	flag.Parse()
+
+	// 输出结果
+	fmt.Printf("user=%v\npassword=%v\nhost=%v\nport=%v\n", user, passwd, host, port)
+}
+
+```
+
+运行
+```bash
+go build main.go
+./main -u root -p 123456 -h 127.0.0.1 -port 3306
+```
+结果
+```bash
+user=root
+password=123456
+host=127.0.0.1
+port=3306
+```
+
+# JSON 基本介绍
+JSON(JavaScript Object Notation)是一种轻量级的数据交换格式，易于阅读和编写，也易于机器解析和生成。
+
+JSON是在2001年开始推广使用的数据格式，目前已经成为主流的数据格式。
+
+JSON易于机器解析和生成，并有效地提升网络传输效率，通常程序在网络传输时会先将数据（结构体、map、切片等）序列化成JSON字符串，当接收方接收到JSON字符串时，再反序列化恢复得到原来的数据类型（结构体、map、切片等）。
+
+## JSON序列化
+JSON序列化指将KEY-VALUE结构的数据类型序列化成JSON字符串的操作。
+
+### 序列化结构体
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+// 结构体序列化时，可以指定JSON标签，如下面 Name, Age，这里使用了 golang 的反射机制
+// 如果字段名不是大写，那么json.marshal序列化会丢掉该字段
+type Monster struct {
+	Name     string `json:"name"`
+	Age      int    `json:"age"`
+	Birthday string
+	Sal      float64
+	Skill    string
+}
+
+func testStruct() {
+	var monster = Monster{
+		Name:     "牛魔王",
+		Age:      5000,
+		Birthday: "1-11-11",
+		Sal:      8000.0,
+		Skill:    "一板斧",
+	}
+	// 序列化
+	data, err := json.Marshal(&monster)
+	if err != nil {
+		fmt.Printf("序列化失败")
+		return
+	}
+	// 输出序列化后的及格过
+	fmt.Printf("monster序列化后的结果%q\n", string(data))
+}
+
+func main() {
+	fmt.Println()
+	testStruct()
+}
+
+```
+
+### 序列化map
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+func testMap() {
+	// 定义一个map
+	var a map[string]interface{}
+	// 使用map前，需要先make
+	a = make(map[string]interface{})
+	a["name"] = "红孩儿"
+	a["age"] = 30
+	a["address"] = "芭蕉洞"
+	// 序列化map
+	data, err := json.Marshal(a) // data 是 []byte
+	if err != nil {
+		fmt.Println("序列化失败")
+		return
+	}
+	fmt.Printf("a map 序列化后=%v\n", string(data))
+}
+
+func main() {
+	fmt.Println()
+	testMap()
+}
+
+```
+### 序列化切片
+
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+func testSlice() {
+	// 声明切片
+	var slice []map[string]interface{}
+	var m1 map[string]interface{}
+	// 使用前先MAKE
+	m1 = make(map[string]interface{})
+	m1["name"] = "jack"
+	m1["age"] = 7
+	m1["address"] = [...]string{"北京", "南京"}
+	// 添加到切片
+	slice = append(slice, m1)
+	// 先MAKE
+	m2 := make(map[string]interface{})
+	m2["name"] = "tom"
+	m2["age"] = 13
+	m2["address"] = "纽约"
+	// 添加到切片
+	slice = append(slice, m2)
+
+	// 切片序列化
+	data, err := json.Marshal(slice)
+	if err != nil {
+		fmt.Println("序列化错误")
+		return
+	}
+	fmt.Println(string(data))
+
+}
+
+func main() {
+	fmt.Println()
+	testSlice()
+}
+
+```
+
+### 序列化其他类型
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+// 基本数据类型序列化
+func testFloat64() {
+	// 对基本数据类型序列化意义不大
+	var num1 float64 = 2124.8
+	// 对 num1 序列化
+	data, err := json.Marshal(num1)
+	if err != nil {
+		fmt.Println("序列化失败")
+		return
+	}
+	fmt.Printf("%q\n", string(data)) // 把浮点数转为字符串
+}
+
+func main() {
+	fmt.Println()
+	testFloat64()
+}
+
+```
+
+## JSON反序列化
+JSON反序列化指将JSON字符串反序列化成对应的数据类型。
+
+### 反序列化结构体
+需要保证字段一致
+
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+type Monster struct {
+	Name     string `json:"name"`
+	Age      int    `json:"age"`
+	Birthday string
+	Sal      float64
+	Skill    string
+}
+
+func unserial() {
+	// 项目开发中通过其他方式获取得到
+	str := "{\"name\":\"牛魔王\",\"age\":5000,\"Birthday\":\"1-11-11\",\"Sal\":8000,\"Skill\":\"一板斧\"}"
+
+	// 定义一个 monster实例
+	var monster Monster
+	err := json.Unmarshal([]byte(str), &monster)
+	if err != nil {
+		fmt.Println("反序列化失败")
+	}
+	fmt.Println(monster)
+	fmt.Println(monster.Name)
+}
+
+func main() {
+	fmt.Println()
+	unserial()
+}
+
+```
+### 反序列化map
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+func unserialMap() {
+	str := "{\"address\":\"芭蕉洞\",\"age\":30,\"name\":\"红孩儿\"}"
+	// 定义一个map
+	var a map[string]interface{}
+
+	// a = make(map[string]interface{})
+
+	// 不需要再make，因为反序列化底层会自动make
+	err := json.Unmarshal([]byte(str), &a)
+	if err != nil {
+		fmt.Printf("反序列化失败")
+		return
+	}
+	fmt.Println(a)
+}
+
+func main() {
+	fmt.Println()
+	unserialMap()
+}
+
+```
+
+### 反序列化切片
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+func unserialSlice() {
+	str := "[{\"address\":[\"北京\",\"南京\"],\"age\":7,\"name\":\"jack\"},{\"address\":\"纽约\",\"age\":13,\"name\":\"tom\"}]"
+
+	// 定义一个切片
+	var slice []map[string]interface{}
+
+	err := json.Unmarshal([]byte(str), &slice)
+	if err != nil {
+		fmt.Println("反序列化失败")
+		return
+	}
+	fmt.Println(slice)
+}
+
+func main() {
+	fmt.Println()
+	unserialSlice()
+}
+
+```
+
+# 单元测试
+在项目开发中，会遇到确认一个函数或者模块是否正确（运行结果正确）。
+
+传统测试示例
+```go
+package main
+
+import (
+	"fmt"
+)
+
+// 被测函数
+func addUpper(n int) int {
+	res := 0
+	for i := 0; i <= n; i++ {
+		res += i
+	}
+	return res
+}
+
+func main() {
+	fmt.Println()
+	// 传统测试方法
+	res := addUpper(10)
+	if res != 55 {
+		fmt.Printf("addUpper 错误，返回值=%v 期望值=%v\n", res, 55)
+	} else {
+		fmt.Printf("addUpper 正确，返回值=%v 期望值=%v\n", res, 55)
+	}
+}
+
+```
+
+golang 语义自带一个轻量级的测试框架 testing 和自带的 go test 命令来实现单元测试和性能测试，testing 框架和其他语言中的测试框架类似，可以基于这个框架写针对相应函数的测试用例，也可以基于该框架写相应的压力测试用例。通过单元测试，可以解决如下问题：
+1. 确保每个函数是可运行的，并且结果是正确的
+2. 确保写出来的代码性能是好的
+3. 单元测试能及时发现程序设计或实现中逻辑错误，使问题及早暴露，便于问题的定位解决，而性能测试的重点在于发现程序设计上的一些问题，让程序能够在高并发的情况下还能保存稳定
+
+单元测试示例
+
+代码结构
+```bash
+.
+├── go.mod
+├── main.go
+└── test
+    ├── cal.go
+    ├── cal_test.go
+    └── sub_test.go
+
+1 directory, 5 files
+```
+
+cal.go 
+```go
+package test
+
+// 待测试函数
+
+func addUpper(n int) int {
+	res := 0
+	for i := 0; i <= n; i++ {
+		res += i
+	}
+	return res
+}
+
+func getSub(n1, n2 int) int {
+	return n1 - n2
+}
+
+```
+
+cal_test.go
+```go
+package test
+
+import (
+	"testing"
+)
+
+// 编写一个测试用例，去测试 addUpper是否正确
+// 必须以 Test 开头，AddUpper 首字母必须大写
+func TestAddUpper(t *testing.T) {
+	// 调用
+	res := addUpper(10)
+	if res != 55 {
+		// fmt.Printf("addUpper 错误，返回值=%v 期望值=%v\n", res, 55)
+		t.Fatalf("addUpper 错误，返回值=%v 期望值=%v\n", res, 55)
+	}
+	// 如果正确，输出日志
+	t.Logf("addUpper(10)执行正确...")
+}
+
+func TestHello(t *testing.T) {
+	t.Logf("TestHello被调用...")
+}
+
+```
+
+sub_test.go
+
+```go
+package test
+
+import (
+	"testing"
+)
+
+// 编写一个测试用例，去测试 addUpper是否正确
+// 必须以 Test 开头，AddUpper 首字母必须大写
+func TestGetSub(t *testing.T) {
+	// 调用
+	res := getSub(10, 3)
+	if res != 7 {
+		// fmt.Printf("addUpper 错误，返回值=%v 期望值=%v\n", res, 55)
+		t.Fatalf("getSub(10, 3) 错误，返回值=%v 期望值=%v\n", res, 7)
+	}
+	// 如果正确，输出日志
+	t.Logf("getSub(10, 3)执行正确...")
+}
+
+```
+
+单元测试总结
+1. 测试用例文件名必须以 xxx_test.go 命名，比如 cal_test.go, sub_test.go 
+2. 测试用例函数必须以 Test 开头，一般来说是 Test+被测试函数名，比如 TestAddUpper()
+3. TestAddUpper(t *testing.T) 的形参必须是 *testing.T
+4. 一个测试用例文件中可以有多个测试用例函数
+5. 运行测试用例指令：`go test -v`
+6. 当出现错误时，可以使用 t.Fataf 来格式化输出错误信息，并退出程序
+7. t.Logf方法可以输出相应的日志
+8. 测试用例函数并没有放在 main 函数中，但是却能够正确执行，这就是测试用例的方便支出
+9. PASS 表示测试用例运行成功，FAIL表示测试用例运行失败
+10. 只测试单个文件，可以加上被测试的源文件：`go test -v cal_test.go cal.go`
+11. 测试单个方法：`go test -v -test.run TestAddUpper`
+
