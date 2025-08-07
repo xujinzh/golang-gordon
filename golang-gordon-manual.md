@@ -5608,3 +5608,151 @@ func main() {
 3. 如果从管道取出数据后，那么可以继续放入，因为已经腾出位置了，遵循先进先出的原则
 4. 在没有使用协程的情况下，如果管道中的数据取完了，再取会报死锁 dead lock
 5. `<-intChan` 取出管道里的数据可以扔掉，不赋值给别的变量
+
+### 案例
+1. 创建一个 intChan，最多可以存放 3 个 int
+```go
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	var intChan chan int
+	intChan = make(chan int, 3)
+	intChan <- 10
+	intChan <- 20
+	intChan <- 10
+	// 因为 intChan 的容量是3，再存放数据会报告 deadlock
+	num1 := <- intChan
+	num2 := <- intChan
+	num3 := <- intChan
+	// 因为 intChan 中的数据已经取完，再取会报告 deadlock
+	fmt.Println(num1, num2, num3)
+}
+
+```
+2. 创建一个 mapChan，最多可以存放 10 个 map[string]string 的 key-value
+```go
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	var mapChan chan map[string]string
+	mapChan = make(chan map[string]string, 10)
+
+	m1 := make(map[string]string, 20)
+	m1["city1"] = "beijing"
+	m2["city2"] = "shanghai"
+
+	m2 := make(map[string]string, 20)
+	m2["fruit1"] = "apple"
+	m2["fruit2"] = "orange"
+
+	mapChan <- m1
+	mapChan <- m2
+
+	fmt.Println(m1, m2)
+}
+```
+3. 创建一个 catChan，最多可以存放 10 个 Cat 结构体变量
+```go
+package main
+
+import (
+	"fmt"
+)
+
+var Cat struct {
+	Name string
+	Age int
+}
+
+func main() {
+	catChan := make(chan Cat, 10)
+	cat1 := Cat{
+		Name: "tom",
+		Age: 1,
+	}
+	cat2 := Cat{
+		Name: "jack",
+		Age: 2,
+	}
+
+	catChan <- cat1
+	catChan <- cat2
+
+	cat11 := <- catChan
+	cat22 := <- catChan
+
+	fmt.Pintln(cat11, cat22)
+}
+```
+
+4. 创建一个 chtChan2，最多可以存放 10 个 *Cat 变量
+```go
+package main
+
+import (
+	"fmt"
+)
+
+var Cat struct {
+	Name string
+	Age int
+}
+
+func main() {
+	var catChan chan *Cat
+	catChan = make(chan *Cat, 10)
+
+	cat1 := Cat{"Tom", 1}
+	cat2 := Cat{"Lucy", 2}
+
+	catChan2 <- &cat1
+	catChan2 <- &cat2
+
+	cat11 := <- catChan2
+	cat22 := <- catChan2
+
+	fmt.Println(cat11, cat22)
+}
+```
+5. 创建一个 allChan，最多可以存放 10 个任意数据类型的变量
+```go
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	var allChan chan interface{}
+
+	allChan = make(chan interface{}, 10)
+
+	cat1 := Cat{"tom", 1}
+	cat2 := Cat{"tomm", 11}
+
+	allChan <- cat1
+	allChan <- cat2
+	allChan <- 10
+	allChan <- "jack"
+	// 取出
+	cat11 := <- allChan
+	cat22 := <- allChan
+	v1 := <- allChan
+	v2 := <- allChan
+
+	fmt.Println(cat11, cat22, v1, v2)
+
+	// cat11 是空接口类型，需要先用类型断言转成 Cat 结构体类型
+	cat111 := cat11.type(Cat)
+	fmt.Println(cat111.Name)
+}
+```
+

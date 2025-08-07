@@ -24,7 +24,7 @@ func main() {
 
 	fmt.Printf("newCat type = %T, newCat value = %v\n", newCat, newCat)
 
-	newCat2, ok := newCat.(Cat)
+	newCat2, ok := newCat.(Cat) // 类型推断
 	if ok {
 		fmt.Println(newCat2.Name)
 	}
