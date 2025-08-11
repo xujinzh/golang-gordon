@@ -5756,3 +5756,277 @@ func main() {
 }
 ```
 
+经典案例
+```go
+package main
+
+/*
+goroutine 和 channel 协同工作的案例
+1. 开启一个 writeData 协程，向管道 intChan 中写入 50 个整数；
+2. 开启一个 readData 协程，从管道 intChan 中读取 writeData 写入的数据；
+3. 主线程需要等待 writeData 和 readData 协程都完成工作才能退出
+*/
+
+import (
+	"fmt"
+)
+
+func writeData(intChan chan int) {
+	for i := 1; i <= 50; i++ {
+		// 放入数据
+		intChan <- i
+		fmt.Println("writeData 写入数据", i)
+	}
+	close(intChan) // 关闭管道
+}
+
+func readData(intChan chan int, exitChan chan bool) {
+	for {
+		// 对于关闭的管道，如果数据取完了，那么会返回 false 给 ok
+		v, ok := <-intChan
+		if !ok {
+			break
+		}
+		fmt.Println("readData 读到数据", v)
+	}
+
+	// readData 读取完数据后，任务完成
+	exitChan <- true
+	close(exitChan)
+}
+
+func main() {
+	fmt.Println()
+	// 创建两个管道
+	intChan := make(chan int, 50)
+	exitChan := make(chan bool, 1)
+
+	// 创建协程
+	go writeData(intChan)
+	go readData(intChan, exitChan)
+
+	// 主程序等待协程完成
+	for {
+		_, ok := <-exitChan
+		if !ok { // 如果 exitChan 中的数据读完了，那么关闭
+			break
+		}
+	}
+}
+```
+
+### 管道阻塞
+
+1. 如果只是想管道中写数据，而不进行读，那么就会出现阻塞而 deaklock， 如上面的程序，将 main() 中的 go readData(intChan, exitChan) 注销 ；
+2. 如果读管道的数据的频率，和写管道的数据的频率不一样，编译器会分析，不会进行阻塞；
+
+
+### 应用案例
+
+使用多协程计算素数
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func putNum(intChan chan int) {
+	for i := 1; i <= 800000; i++ {
+		intChan <- i
+	}
+	close(intChan)
+}
+
+func primeNum(intChan chan int, primeChan chan int, exitChan chan bool) {
+	// 使用 for 循环
+	var flag bool
+	for {
+		num, ok := <-intChan
+
+		if !ok { // 如果 intChan 中的数据取完了
+			break
+		}
+		flag = true
+		// 判断 num 是不是素数
+		for i := 2; i < num; i++ {
+			if num%i == 0 { // 说明 num 不是素数
+				flag = false
+				break
+
+			}
+		}
+		if flag { // 如果是素数，就放入到管道 primeChan
+			primeChan <- num
+		}
+
+	}
+	// fmt.Println("有一个 primeNum goroutine 因为取不到数据，退出")
+	exitChan <- true
+}
+
+func main() {
+	start := time.Now().UnixMilli()
+	intChan := make(chan int, 10000) // 存放 1 - 8000
+	primeChan := make(chan int, 800) // 存放素数
+
+	// 标识协程退出
+	var threads int = 30
+	exitChan := make(chan bool, threads)
+
+	// 开启一个 goroutine，向 intChan 放入 1- 8000 个整数
+	go putNum(intChan)
+	// 开启四个 goroutine，从 intChan 中取数，判断是否为素数，如果是，就放入到 primeChan
+	for i := 0; i < threads; i++ {
+		go primeNum(intChan, primeChan, exitChan)
+	}
+
+	// 如果从 exitChan 中取到了四个 true，那么说明 goroutin 都处理完了，那么关闭 primeChan
+	go func() {
+		for i := 0; i < threads; i++ {
+			<-exitChan // 会等待
+		}
+		close(primeChan)
+	}()
+
+	// 遍历管道 primeChan，把结果取出
+	for {
+		_, ok := <-primeChan
+		if !ok {
+			break
+
+		}
+		// fmt.Printf("素数=%v\n", res)
+	}
+
+	end := time.Now().UnixMilli()
+	fmt.Printf("主线程退出，耗时：%d 毫秒\n", end-start)
+}
+```
+
+channel 使用细节和注意事项
+1. channel 可以声明为只读`var onlyWriteChan <-chan int`，或者只写`var onlyReadChan chan<- int`
+2. 默认情况下，管道是双向的，可读可写`var myChan chan int`
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+// 只写
+func send(ch chan<- int, exitChan chan struct{}) {
+	for i := 0; i < 10; i++ {
+		ch <- i
+	}
+	close(ch)
+	var a struct {}
+	exitChan <- a
+}
+
+// 只读
+func recv(ch <-chan int, exitChan chan struct{}) {
+	for {
+		v, ok := <-ch
+		if !ok {
+			break
+		}
+		fmt.Println(v)
+	}
+	var a struct{}
+	exitChan <- a
+}
+
+
+
+func main() {
+	var ch chan int
+	ch = make(chan int, 10)
+	exitChan := make(chan struct{}, 2)
+
+	go send(ch, exitChan)
+	go recv(ch, exitChan)
+
+	var total = 0
+	for _ = range exitChan {
+		total++
+		if total == 2 {
+			break
+		}
+	}
+	fmt.Println("done!")
+}
+
+```
+3. 某个 gorountine 的 panic 异常会导致整个程序退出，可以使用 defer ... recover 捕获异常，使主线程不受影响，可以继续执行
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func sayHello() {
+	for i := 0; i < 10; i++ {
+		time.Sleep(time.Second)
+		fmt.Println("Hello, World")
+	}
+}
+
+func test() {
+	// 使用 defer + recover 捕获异常
+	defer func() {
+		// 捕获函数抛出的 panic 异常
+		if err := recover(); err != nil {
+			fmt.Println("test() 发送错误", err)
+		}
+	}()
+
+	var myMap map[int]string
+	myMap[0] = "golang" // 使用前没有先 make，会报 panic 异常
+}
+
+func main() {
+	go sayHello()
+	go test()
+
+	for i := 0; i < 10; i++ {
+		fmt.Println("main() ok=", i)
+		time.Sleep(time.Second)
+	}
+}
+```
+
+### select 语句
+channel 当不关闭遍历取数据时，会出现阻塞导致 dead lock，但是有时候无法确定什么时候需要关闭 channel 又想便利 channel，可以使用 select
+```go
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	intChan := make(chan int, 10)
+	stringChan := make(chan string, 5)
+
+	labelfor :
+	for {
+		select {
+			case v := <- intChan:
+			fmt.Println(v)
+			case v := <- stringChan:
+			fmt.Println(v)
+			default:
+			fmt.Println("都取不到")
+			// break // 只会跳出 select 循环
+			break labelfor // 会跳出外层的 for 循环
+		}
+	}
+}
+```
+
+3. 
