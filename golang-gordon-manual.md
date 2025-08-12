@@ -321,6 +321,51 @@ x = 33
 - 变量代表了三重属性：变量名、值和数据类型。
 - "+" 两边都是数值类型变量时，做数值加法（如 `2 + 3.1`）；当两边都是字符串变量时，则做字符串拼接（如 `"hello " + "world" ` ）。但不能是一边是数值类型变量，一边是字符串类型变量。
 
+# 常量
+1. 常量使用 const 修饰
+2. 常量在定义的时候，必须初始化
+3. 常量不能修改
+4. 常量只能修饰 bool、数值类型（int, float）、string 类型
+5. golang 中没有要求常量必须首字母大写
+```go
+// 语法
+const 标识符 [type类型] = value值
+
+// example
+const name = "tom"
+
+const tax float64 = 0.8
+
+const a int  // error
+
+const b = 9 / 3
+
+var num = 9
+const b = num / 3 // error
+
+const c = getVal() // error
+
+const (
+	a = 1
+	b = 2
+)
+
+// 专业写法
+const (
+	a = iota // 表示给 a 赋值 0
+	b  // b 在 a 的基础上 +1
+	c  // c 在 b 的基础上 +1
+	// 结果是 a = 0, b = 1, c = 2
+)
+
+const (
+	a = iota
+	b = iota
+	c, d = iota, iota
+	// 结果是 a = 0, b = 1, c = d = 2
+)
+```
+
 
 # 数据类型
 Go 语言中每一种变量都要有对应的数据类型，每一种数据类型在内存中分配了不同大小的内存空间。Go 语言中分为两大类数据类型，一种是基本数据类型，一种是复杂数据类型（也叫派生数据类型）。按照变量存储的数据情况又分为值类型（变量存储数据值，内存通常在栈中分配）和引用类型（变量存储内存地址，该地址对应的空间才真正存储数据或值，内存通常在堆中分配。当没有任何变量引用这个地址时，该地址对应的数据空间就称为一个垃圾，**有 GC 来回收**）。值类型包括所有基本数据类型和复杂数据类型中的数组、结构体，引用类型包括复杂数据类型中的其他类型（指针、切片 slice、map、管道 channel、接口 interface）。
@@ -6029,4 +6074,98 @@ func main() {
 }
 ```
 
-3. 
+# 反射 reflect
+
+反射使用的场景：
+1. 结构体序列化和反序列化标签的使用，可以回归前面json章节；
+2. 适配器函数，桥连接
+```go
+test1 := func(v1 int, v2 int) {
+	t.Log(v1, v2)
+}
+
+test2 := func(v1 int, v2 int, s string) {
+	t.Log(v1, v2, s)
+}
+
+// 定义一个适配器函数用作统一处理接口
+bridge := func(call interface{}, args... interface{}) {
+	// todo
+}
+
+// 调用 test1
+bridge(test1, 1, 2)
+// 调用 test2
+bridge(test2, 1, 2, "test2")
+```
+
+1. 反射可以在运行时动态获取变量的各种信息，比如变量的类型(type)， 类别(kind)。普通变量的 type 和 kind 是一致的，但是结构体的不同；
+2. 如果是结构体变量，可以获取结构体本身的信息（包括结构体的字段、方法等）；
+3. 通过反射，可以修改变量的值，可以调用关联的方法；
+4. 使用反射，需要 import "reflect"
+```go
+package main
+
+import (
+	"fmt"
+	"reflect"
+)
+
+func reflectTest(b interface{}) {
+	// 通过反射获取传入的变量的 type，kind 和值
+	// 1. 先获取 reflect.Type
+	rType := reflect.TypeOf(b)
+	fmt.Println("reflect type =", rType)
+
+	// 2. 获取 reflect.Value
+	rValue := reflect.ValueOf(b)
+	fmt.Printf("reflect value = %v, reflect value type = %T\n", rValue, rValue)
+
+	fmt.Println("2 + rValue =", 2+rValue.Int())
+
+	// 3. 将 rValue 转成 interface{}
+	iValue := rValue.Interface()
+	// 将 interface{} 通过断言转成需要的类型
+	num2 := iValue.(int)
+	fmt.Println(num2)
+}
+
+func reflectTest02(b interface{}) {
+	rType := reflect.TypeOf(b)
+	fmt.Printf("iType = %v, iType Type = %T\n", rType, rType)
+
+	rValue := reflect.ValueOf(b)
+
+	iValue := rValue.Interface()
+	fmt.Printf("iValue = %v, iValue Type = %T\n", iValue, iValue)
+
+	// 这里必须使用类型断言，虽然从运行结果看 iValue 的类型是 Student 结构体类型，但是那是运行时，编译时无法判断，会报错
+	// 将 interface() 通过类型断言转成需要的类型，如果类型不确定，可以使用 switch
+	student, ok := iValue.(Student)
+	if ok {
+		fmt.Printf("student.Name = %v\n", student.Name)
+	}
+}
+
+type Student struct {
+	Name string
+	Age  int
+}
+
+func main() {
+	// 基本数据类型、空接口interface{}、reflect.Value 进行反射基本操作
+	// 先定义一个 int
+	var num int = 100
+	reflectTest(num)
+
+	// 定义一个 Student 实例
+	student := Student{
+		Name: "tom",
+		Age:  10,
+	}
+	reflectTest02(student)
+}
+
+```
+
+## 放射注意事项和细节
