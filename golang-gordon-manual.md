@@ -6145,6 +6145,18 @@ func reflectTest02(b interface{}) {
 	if ok {
 		fmt.Printf("student.Name = %v\n", student.Name)
 	}
+
+	// 获取变量对应的 Kind, 1. rValue.Kind(); 2. rType.Kind()
+	kind1 := rValue.Kind()
+	kind2 := rType.Kind()
+	fmt.Printf("kind = %v, kind = %v\n", kind1, kind2)
+
+}
+
+func reflectTest03(b interface{}) {
+	rValue := reflect.ValueOf(b)
+	fmt.Printf("rValue kind = %v\n", rValue.Kind())
+	rValue.Elem().SetInt(2)
 }
 
 type Student struct {
@@ -6164,8 +6176,114 @@ func main() {
 		Age:  10,
 	}
 	reflectTest02(student)
+
+	// 使用反射修改变量的值
+	var n int = 1
+	reflectTest03(&n)
+	fmt.Println("n =", n)
+}
+```
+
+## 放射注意事项和细节
+1. reflect.ValueOf.Kind 获取变量的类别，返回一个常量
+2. Type 是类型，Kind 是类别
+```go
+var num int = 10 // num Type is int, Kind is int
+var student Student // student Type is package.Student, Kind is struct
+```
+3. 通过反射可以让变量在 interface{}, reflect.Value 之间互相转换
+4. 使用反射获取变量的值，必须保证数据类型匹配，否则报 panic
+```go
+var x int
+reflect.ValueOf(x).Int() // right
+reflect.ValueOf(x).Float() // panic
+```
+5. 通过反射修改变量的值，需要传入变了的地址，即指针类型来完成。同时，需要使用 reflect.ValueOf.Elem().SetXXX()
+
+```go
+package main
+
+import (
+	"fmt"
+	"reflect"
+)
+
+// define a Monster struct
+type Monster struct {
+	Name  string `json:"name"`
+	Age   int    `json:"monster-age"`
+	Score float32
+	Sex   string
+}
+
+// method, show struct info
+func (monster Monster) Print() {
+	fmt.Println(monster)
+}
+
+// method, get sum
+func (monster Monster) GetSum(n1, n2 int) int {
+	return n1 + n2
+}
+
+// method, set monster field value
+func (monster Monster) Set(name string, age int, score float32, sex string) {
+	monster.Name = name
+	monster.Age = age
+	monster.Score = score
+	monster.Sex = sex
+}
+
+func TestStruct(any interface{}) {
+	// get reflect.Type
+	rType := reflect.TypeOf(any)
+	// get reflect.Value
+	rValue := reflect.ValueOf(any)
+	// judge is struct
+	anyKind := rValue.Kind()
+	if anyKind != reflect.Struct {
+		fmt.Println("expect struct")
+		return
+	}
+
+	// get num of field of struct
+	numField := rValue.NumField()
+	fmt.Printf("struct has %d fields\n", numField)
+
+	// traversal all field
+	for i := 0; i < numField; i++ {
+		fmt.Printf("Field %d: value = %v\n", i, rValue.Field(i))
+		// get tag of struct
+		tagValue := rType.Field(i).Tag.Get("json")
+		if tagValue != "" {
+			fmt.Printf("Field %d: tag = %v\n", i, tagValue)
+		}
+	}
+
+	// get num of method
+	numMethod := rValue.NumMethod()
+	fmt.Printf("struct has %d methods\n", numMethod)
+
+	// call struct method, input arg is [] reflect.Value, here is null
+	rValue.Method(1).Call(nil)
+
+	// call struct method with arguments, input arg is []reflect.Value, and output arg is also []reflect.Value
+	var params []reflect.Value
+	params = append(params, reflect.ValueOf(10))
+	params = append(params, reflect.ValueOf(40))
+	res := rValue.Method(0).Call(params)
+	fmt.Println("res =", res[0].Int())
+}
+
+func main() {
+	// define a Monster instance
+	monster := Monster{
+		Name:  "monkey",
+		Age:   500,
+		Score: 88,
+	}
+	TestStruct(monster)
 }
 
 ```
 
-## 放射注意事项和细节

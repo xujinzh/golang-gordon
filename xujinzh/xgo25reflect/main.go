@@ -47,6 +47,12 @@ func reflectTest02(b interface{}) {
 
 }
 
+func reflectTest03(b interface{}) {
+	rValue := reflect.ValueOf(b)
+	fmt.Printf("rValue kind = %v\n", rValue.Kind())
+	rValue.Elem().SetInt(2)
+}
+
 type Student struct {
 	Name string
 	Age  int
@@ -64,4 +70,9 @@ func main() {
 		Age:  10,
 	}
 	reflectTest02(student)
+
+	// 使用反射修改变量的值
+	var n int = 1
+	reflectTest03(&n)
+	fmt.Println("n =", n)
 }
