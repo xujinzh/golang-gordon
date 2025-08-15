@@ -6511,3 +6511,5 @@ redis hash 是一个键值对集合，类似于 golang 中的 map：`var user ma
 3. sismember, `sismember email lili@outlook.com`
 4. srem, `srem emial lucy@icloud.com`
 
+## 数据结构
+
