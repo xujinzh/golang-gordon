@@ -6287,3 +6287,227 @@ func main() {
 
 ```
 
+# TCP 网聊
+
+## 简单实例
+server 端
+```go
+package main
+
+import (
+	"fmt"
+	"io"
+	"net"
+)
+
+func process(conn net.Conn) {
+	defer conn.Close()
+	// receive client message
+	for {
+		// make a slice
+		buf := make([]byte, 1024)
+		fmt.Printf("server waiting message from client=%v\n", conn.RemoteAddr().String())
+		// waiting read client message
+		n, err := conn.Read(buf)
+		if err == io.EOF {
+			fmt.Println("client quit successfully!")
+			return
+		} else if err != nil {
+			fmt.Println("server receive client message by conn err=", err)
+			return
+		}
+
+		fmt.Println("server read client message done, character num=", n)
+		// display message received
+		fmt.Printf("server receive message=%v\n", string(buf[:n]))
+	}
+}
+
+func main() {
+	fmt.Println("server listening...")
+	listen, err := net.Listen("tcp", "0.0.0.0:8888")
+	if err != nil {
+		fmt.Println("server listen err=", err)
+		return
+	}
+	defer listen.Close()
+
+	for {
+		conn, err := listen.Accept() // waiting connection
+		if err != nil {
+			fmt.Println("server listen accept err=", err)
+		} else {
+			fmt.Printf("conn=%v, remot client eaddr=%v\n", conn, conn.RemoteAddr().String())
+		}
+		// run a goroutine server a accepted connect
+		go process(conn)
+	}
+}
+
+```
+
+client 端
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"net"
+	"os"
+	"strings"
+)
+
+func main() {
+	conn, err := net.Dial("tcp", "127.0.0.1:8888")
+	if err != nil {
+		fmt.Println("client connect error")
+		return
+	} else {
+		fmt.Println("client connect successfully")
+	}
+
+	defer conn.Close()
+
+	for {
+		status, err := bufio.NewReader(os.Stdin).ReadString('\n')
+		if err != nil {
+			fmt.Println("bufio read err=", err)
+		} else {
+			fmt.Println("bufio read success, status=", status)
+		}
+		// if user input exit
+		status = strings.Trim(status, " \r\n")
+		if status == "exit" {
+			fmt.Println("client quit...")
+			break
+		}
+
+		// send message to server
+		n, err := conn.Write([]byte(status + "\n"))
+		if err != nil {
+			fmt.Println("client send message to server err=", err)
+		} else {
+			fmt.Println("client send message to server successfully, character num=", n)
+		}
+	}
+}
+
+```
+
+## redis 数据库
+redis是一个开源（BSD许可）的，内存中的数据结构存储系统，它可以用作数据库、缓存和消息中间件。它支持多种类型的数据结构，如字符串（strings）、散列（hashes）、列表（lists）、集合（sets）、有序集合（sorted sets）与范围查询，bitmaps, hyperloglogs和地理空间（geospatial）索引半径查询。redis内置了复制（replication）、LUA脚本（Lua scripting）、LRU驱动事件（LRU eviction）， 事务（transactions）和不同级别的磁盘持久化（persistence），并通过redis哨兵（sentinel）和自动分区（cluster）提供高可用性（high availability）。
+
+下载地址：https://download.redis.io/releases/
+
+安装：
+```bash
+# download source code
+wget https://download.redis.io/releases/redis-7.4.5.tar.gz
+# uncompress
+tar -xzvf redis-7.4.5.tar.gz
+# build and make to src dir
+make -j`nproc`
+
+# test
+make test
+# or
+./runtest
+
+# run redis server
+cd src
+./redis-server
+
+# open another shell and run redis client
+cd src
+./redis-cli
+```
+
+1. redis 是 NoSQL 数据库，不是关系型数据库；
+2. redis(**re**mote **di**ctionary **s**erver, 远程字典服务器)
+3. redis 性能非常高，单机能够达到15W qps，通常适合做缓存，也可以持久化
+4. redis完全开源免费，高性能的key/value分布式内存数据库，基于内存运行病支持持久化的NoSQL数据库，也称为数据结构服务器
+5. redis安装后，默认有16个数据库，编号0-15，初始默认使用0号库
+6. redis有五大数据类型：字符串（strings）、哈希或散列（hashes）、列表（lists）、集合（sets）、有序集合（sorted sets）
+
+### 基本使用
+1. 添加 key-value \[set\]
+```redis
+127.0.0.1:6379> set name xjz
+```
+2. 查看当前数据\[默认是0号库\]中所有 key \[keys *\]
+```redis
+127.0.0.1:6379> keys *
+```
+3. 获取 key 对应的值 \[get key\]
+```redis
+127.0.0.1:6379> get name
+```
+4. 切换数据库1 \[select 1\]
+```redis
+127.0.0.1:6379> select 1
+```
+5. 查看当前数据库 key-value 数量 \[dbsize\]
+```redis
+127.0.0.1:6379> dbsize
+```
+6. 清空当前数据库 \[flushdb\]; 清空所有数据库 \[flushall\]
+
+
+### 字符串数据类型
+字符串是 redis 最基本的类型，一个 key 对应一个 value.（str1 = "beijing", str1 is key, beijing is value） 字符串是二进制安全的。除了可以存储普通的字符串外，还可以存放图片等数据。
+
+字符串 value 的最大值是 512M
+
+在 redis-cli 输入中文不显示，但是可以存储。
+
+增删改查(CRUD)：
+1. set，如果存在那么修改，如果不存在那么增加
+2. del，删除
+3. get，查询
+4. setex(set with expire)，设置键秒值，setex key seconds value，将值 value 关联到 key，并将 key 的生存时间设为 seconds（以秒为单位），如果 key 已经存在， setex 命令将覆盖写旧值。该命令类似于：`set key value`, `expire key seconds`
+5. mset, 同时设置多个键值对，`mset key value [key1 value1 ...]`
+6. mget, 同时获取多个键值对，`mget key1 key2`
+
+### 哈希数据类型
+redis hash 是一个键值对集合，类似于 golang 中的 map：`var user map[string]string`. 哈希是一个字符串类型的字段和值的映射表，哈希特别适合用于存储（结构体）对象。
+
+`hset user1 name "tom"`
+`hset user1 age 30` // 设置是整数，存到数据库仍然是字符串
+
+增删改查：
+1. hset, `hset user1 name tom`
+2. hget, `hget user1 name`
+3. hgetall, `hgetall user1`
+4. hdel, `hdel user1`
+5. hmset, `hmset user1 name tom age 30`
+6. hmget, `hmget user1 name age `
+7. hlen, `hlen user1`, 获取有多少个字段
+8. hexists, `hexists user1 address`, 判断是否存在某个字段
+
+### 列表数据类型
+列表（LIST）是字符串的列表，按照插入的顺序排序，可以添加一个元素到列表的头部（左边）或尾部（右边）。列表本质是一个链表，元素是有序的，元素的值可以重复。 
+
+1. lpush, `lpush city beijing tianjin shanghai`
+2. lrange, `lrange city 0 -1`, 取出的顺序与左推相反， -1 表示列表最后一个元素，-2表示列表倒数第二个元素
+3. del, `del city`，对应的键消失
+
+增删改查：
+1. lpush, 从左边添加
+2. rpush, 从右边添加
+3. lrange, 索引数据
+4. lpop, 从左边删除, `lpop city 1`: 从左边删除1个元素
+5. rpop, 从右边删除
+6. del, 删除整个列表
+7. lindex，按照索引下标获取元素，从左到右，编号从0开始, `lindex city 0`
+8. llen，返回列表的长度, `llen city`
+
+### 集合数据类型
+集合（set）是字符串元素的无序集合，底层是 hashtable 数据结构，集合存放字符串元素，字符串是无序的，而且元素的值不能重复
+
+增删改查：
+1. sadd, `sadd email tom@gmail.com lucy@icloud.com`
+2. smembers, `smembers email`
+3. sismember, `sismember email lili@outlook.com`
+4. srem, `srem emial lucy@icloud.com`
+
