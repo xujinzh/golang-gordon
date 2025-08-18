@@ -2169,6 +2169,136 @@ func main() {
 	fmt.Println("排序后", arr)
 }
 ```
+
+### 选择排序法
+选择排序（select sorting）属于内部排序法，从排序数据中，按指定的规则选择出来某一元素，经过和其他元素重整，再依据某原则交换位置后达到排序的目的。
+
+基本思想：
+- 第一次从R(0)-R(n-1)中选择最小值，与R(0)交换；
+- 第二次从R(1)-R(n-1)中选择最小值，与R(1)交换；
+- 第三次从R(2)-R(n-1)中选择最小值，与R(2)交换；
+- 第i次从R(i)-R(n-1)中选择最小值，与R(i)交换；
+- 第n-1次从R(0)-R(n-1)中选择最小值，与R(0)交换；
+
+```go
+package main
+
+import "fmt"
+
+func SelectSort(arr *[5]int) {
+	// (*arr)[0] = 600 // 等价于 arr[0] = 600
+	for i := 0; i < len(*arr)-1; i++ {
+		for j := i + 1; j < len(*arr); j++ {
+			if (*arr)[i] < (*arr)[j] {
+				(*arr)[i], (*arr)[j] = (*arr)[j], (*arr)[i]
+			}
+		}
+	}
+}
+
+func main() {
+	// 定义一个数组，从大到小排序
+	arr := [5]int{10, 34, 18, 99, 79}
+	fmt.Println(arr)
+	SelectSort(&arr)
+	fmt.Println(arr)
+}
+```
+
+### 插入排序法
+插入排序（insertion sorting）也属于内部排序法，是对欲排序的元素以插入的方式寻找元素的适当位置，以达到排序的目的。
+
+插入排序的思想：
+把 n 个待排序的元素看成为一个有序表和一个无序表，开始时有序表中只包含一个元素，无序表中包含有 n-1 个元素，排序过程中每次从无序表中取出第一个元素，把它的顺序码依次与有序元素的排序码进行比较，将它插入到有序表中的适当位置，使之成为新的有序表。
+
+```go
+package main
+
+import "fmt"
+
+func InsertSort(arr *[7]int) {
+	for i := 1; i < len(arr); i++ {
+		insertVal := arr[i]
+		insertIndex := i - 1
+		// 从大到小排序
+		for insertIndex >= 0 && arr[insertIndex] < insertVal {
+			arr[insertIndex+1] = arr[insertIndex] // 数据后移
+			insertIndex--
+		}
+		// 插入
+		if insertIndex+1 != i {
+			arr[insertIndex+1] = insertVal
+		}
+		fmt.Printf("第%d次插入的结果%v\n", i, *arr)
+	}
+
+}
+func main() {
+	arr := [7]int{23, 0, 12, 56, 34, 100, 3}
+	InsertSort(&arr)
+	fmt.Println(arr)
+
+}
+```
+### 快速排序法
+快速排序（quick sort）是对冒泡排序的一种改进。基本思想是通过一次排序将要排序的数据分割成独立的两部分，其中一部分的所有数据都比另外一部分的所有数据都要小，然后再按照此方法对这两部分数据分别进行快速排序，整个排序过程可以递归进行，以此达到整个数据变成有序序列。
+
+```go
+package main
+
+import "fmt"
+
+func QuickSort(left int, right int, array *[6]int) {
+	l := left
+	r := right
+	// 中轴，支点
+	pivot := array[(left+right)/2]
+	temp := 0
+	// 将比 pivot 小的数放到左边，大的数放到右边
+	for l < r {
+		// 从 pivot 左边找到大于等于 pivot 的值
+		for array[l] < pivot {
+			l++
+		}
+		// 从 pivot 的右边找小于等于 pivot 的值
+		for array[r] > pivot {
+			r--
+		}
+		// 如果本次分解完成
+		if l >= r {
+			break
+		}
+		temp = array[l]
+		array[l] = array[r]
+		array[r] = temp
+		//
+		if array[l] == pivot {
+			r--
+		}
+		if array[r] == pivot {
+			l++
+		}
+	}
+	if l == r {
+		l++
+		r--
+	}
+	if left < r {
+		QuickSort(left, r, array)
+	}
+	if right > l {
+		QuickSort(l, right, array)
+	}
+}
+func main() {
+	arr := [6]int{-9, 78, 0, 23, -567, 70}
+	QuickSort(0, len(arr)-1, &arr)
+	fmt.Println(arr)
+}
+
+```
+
+
 ## 查找
 在 golang 中，常用的查找有两种：
 1. 顺序查找
