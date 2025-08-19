@@ -6656,5 +6656,280 @@ redis hash 是一个键值对集合，类似于 golang 中的 map：`var user ma
 3. sismember, `sismember email lili@outlook.com`
 4. srem, `srem emial lucy@icloud.com`
 
-## 数据结构
+# 数据结构
 
+
+## 栈
+1. 栈（stack）有时候也被叫做堆栈，注意和堆是不同的概念；
+2. 栈是先入后出（first in last out）的有序列表；
+3. 栈是限制线性表中元素的插入和删除只能在线性表的同一端进行的一种特殊线性表。允许插入和删除的一端，为变化的一端，称为栈顶，另一端为固定的一端，称为栈底；
+4. 最先放入栈中的元素在栈底，最后放入的元素在栈顶，而删除刚好相反，最后放入的元素最先删除，最先放入的元素最后删除；
+5. 子程序的调用：在跳往子程序前，会先将下一个指令的地址存到堆栈中，直到子程序执行完后再将地址取出，以回到原来的程序中；
+6. 处理递归调用：和子程序的调用类似，只是除了存储下一个指令的地址外，也将参数、区域变量等数据存入堆栈中。
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+// 使用数组来模拟一个栈
+type Stack struct {
+	MaxTop int    // 表示栈中最大存放的元素个数
+	Top    int    // 栈顶
+	arr    [5]int // 用数组模拟栈
+}
+
+// 向栈中增加元素
+func (stack *Stack) Push(val int) (err error) {
+	// 先判断栈是否满了
+	if stack.Top == stack.MaxTop-1 {
+		fmt.Println("栈已满")
+		return errors.New("栈满")
+	}
+	stack.Top++
+	// 放入数据
+	stack.arr[stack.Top] = val
+	return
+}
+
+// 出栈
+func (stack *Stack) Pop() (val int, err error) {
+	// 判断栈是否为空
+	if stack.Top == -1 {
+		fmt.Println("栈为空")
+		return 0, errors.New("栈为空")
+	}
+
+	// 先取值，再 Top--
+	val = stack.arr[stack.Top]
+	stack.Top--
+	return val, nil
+}
+
+// 遍历栈，需要从栈顶开始遍历
+func (stack *Stack) List() {
+	// 先判断栈是否为空
+	if stack.Top == -1 {
+		fmt.Println("栈为空")
+		return
+	}
+	fmt.Println("栈的情况如下")
+	for i := stack.Top; i >= 0; i-- {
+		fmt.Printf("arr[%d]=%d\n", i, stack.arr[i])
+	}
+}
+
+func main() {
+	stack := &Stack{
+		MaxTop: 5,
+		Top:    -1, // 栈顶为-1时，表示栈为空
+	}
+	fmt.Println(*stack)
+	// 入栈
+	stack.Push(1)
+	stack.Push(2)
+	stack.Push(3)
+	stack.Push(4)
+	stack.Push(5)
+	stack.Push(6)
+	// 打印
+	stack.List()
+	// 出栈
+	value, err := stack.Pop()
+	if err != nil {
+		fmt.Println("出栈错误")
+	} else {
+		fmt.Println("出栈值：", value)
+	}
+	stack.Pop()
+	stack.Pop()
+	stack.Pop()
+	stack.Pop()
+	stack.Pop()
+	// 打印
+	stack.List()
+}
+
+```
+
+## 哈希表（散列）
+哈希表（Hash Table，也叫散列表），根据关键码值（key value）而直接进行访问的数据结构。也就是说，它通过把关键码值映射到表中一个位置来访问记录，以加速查找的速度。这个映射函数叫做散列函数，存放记录的数组叫做散列表。
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+var Num int = 7
+
+// 定义emp
+type Emp struct {
+	Id   int
+	Name string
+	Next *Emp
+}
+
+// 显示雇员信息
+func (emp *Emp) Show(hashtable HashTable) {
+	fmt.Printf("链表%d 找到雇员 %d \n", hashtable.HashFun(emp.Id), emp.Id)
+}
+
+// 定义 emplink
+// 不带表头，第一个节点就存放雇员
+type EmpLink struct {
+	Head *Emp
+}
+
+// 添加员工的方法
+// 单链表，从小到大
+func (emplink *EmpLink) Insert(emp *Emp) {
+	// 辅助指针
+	cur := emplink.Head
+	var pre *Emp = nil // 始终在 cur 前面
+	// 如果当前的 EmpLink 是空链表
+	if cur == nil {
+		emplink.Head = emp
+		return
+	}
+	// 如果不是空链表，给 emp 找到对应的位置并插入
+	// 思路：让 cur 和 emp 比较，并让 pre 保持在 cur 的前面
+	for {
+		if cur != nil {
+			// 比较
+			if cur.Id >= emp.Id { // 找到位置
+				break
+			}
+			// 保证 pre 在 cur 前面
+			pre = cur
+			cur = cur.Next
+		} else { // 链表末尾 cur == nil
+			break
+		}
+	}
+	// 退出时，我们看下是否将 emp 添加到链表最后
+	if pre == nil {
+		emp.Next = cur
+		emplink.Head = emp
+		return
+	} else {
+		pre.Next = emp
+		emp.Next = cur
+	}
+
+}
+
+// 显示当前链表的信息
+func (emplink *EmpLink) ShowLink(no int) {
+	if emplink.Head == nil {
+		fmt.Printf("当前链表 %d 为空\n", no)
+		return
+	}
+	// 遍历当前链表显示数据
+	cur := emplink.Head // 辅助指针
+	for {
+		if cur != nil {
+			fmt.Printf("链表 %d，雇员id=%d，名字=%s ->", no, cur.Id, cur.Name)
+			cur = cur.Next
+		} else {
+			break
+		}
+	}
+	fmt.Println()
+}
+
+// 根据ID查找雇员
+func (emplink *EmpLink) FindById(id int) *Emp {
+	cur := emplink.Head // 辅助指针
+	for {
+		if cur != nil && cur.Id == id {
+			return cur
+		} else if cur == nil {
+			break
+		}
+		cur = cur.Next
+	}
+	return nil
+}
+
+// 定义hashtable
+// 含有一个链表数组
+type HashTable struct {
+	LinkArr [7]EmpLink
+}
+
+// 给 hashtable 编写 insert 雇员的方法
+func (hashtable *HashTable) Insert(emp *Emp) {
+	// 使用散列函数，确定将该雇员添加到哪个链表
+	linkNo := hashtable.HashFun(emp.Id)
+	// 使用对应的链表添加
+	hashtable.LinkArr[linkNo].Insert(emp)
+}
+
+// 显示 hashtable 所有雇员
+func (hashtable *HashTable) ShowAll() {
+	for i := 0; i < len(hashtable.LinkArr); i++ {
+		hashtable.LinkArr[i].ShowLink(i)
+	}
+}
+
+// 查找
+func (hashtable *HashTable) FindById(id int) *Emp {
+	// 先确定在哪个链表
+	linkNo := hashtable.HashFun(id)
+	return hashtable.LinkArr[linkNo].FindById(id)
+}
+
+// 编写一个散列方法
+func (hashtable *HashTable) HashFun(id int) int {
+	return id % 7
+}
+
+func main() {
+	key := ""
+	id := 0
+	name := ""
+	var hashtable HashTable
+	for {
+		fmt.Println("===========雇员系统菜单===========")
+		fmt.Println("input 表示添加雇员")
+		fmt.Println("show 表示添加雇员")
+		fmt.Println("find 表示添加雇员")
+		fmt.Println("exit 表示添加雇员")
+		fmt.Println("请输入你的选择")
+		fmt.Scanln(&key)
+		switch key {
+		case "input":
+			fmt.Println("输入雇员id")
+			fmt.Scanln(&id)
+			fmt.Println("输入雇员name")
+			fmt.Scanln(&name)
+			emp := &Emp{
+				Id:   id,
+				Name: name,
+			}
+			hashtable.Insert(emp)
+		case "show":
+			hashtable.ShowAll()
+		case "find":
+			fmt.Println("请输入id")
+			fmt.Scanln(&id)
+			emp := hashtable.FindById(id)
+			if emp == nil {
+				fmt.Printf("id=%d 的雇员不存在\n", id)
+			} else {
+				emp.Show(hashtable)
+			}
+		case "exit":
+			os.Exit(0)
+		default:
+			fmt.Println("输入错误")
+		}
+	}
+}
+```
