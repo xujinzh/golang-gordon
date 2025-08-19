@@ -2246,9 +2246,13 @@ func main() {
 ```go
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"math/rand"
+	"time"
+)
 
-func QuickSort(left int, right int, array *[6]int) {
+func QuickSort(left int, right int, array []int) []int {
 	l := left
 	r := right
 	// 中轴，支点
@@ -2289,13 +2293,24 @@ func QuickSort(left int, right int, array *[6]int) {
 	if right > l {
 		QuickSort(l, right, array)
 	}
+	return array
 }
 func main() {
-	arr := [6]int{-9, 78, 0, 23, -567, 70}
-	QuickSort(0, len(arr)-1, &arr)
+	arr := []int{-9, 78, 0, 23, -567, 70}
+	arr = QuickSort(0, len(arr)-1, arr)
 	fmt.Println(arr)
-}
 
+	// 测试速度
+	num := 80000000
+	var arr2 []int = make([]int, num)
+	for i := 0; i < num; i++ {
+		arr2[i] = rand.Intn(num + 1)
+	}
+	start := time.Now().Unix()
+	QuickSort(0, len(arr2)-1, arr2)
+	end := time.Now().Unix()
+	fmt.Printf("耗时%d秒\n", end-start)
+}
 ```
 
 
