@@ -6814,13 +6814,11 @@ func (emplink *EmpLink) Insert(emp *Emp) {
 	}
 	// 退出时，我们看下是否将 emp 添加到链表最后
 	if pre == nil {
-		emp.Next = cur
 		emplink.Head = emp
-		return
 	} else {
 		pre.Next = emp
-		emp.Next = cur
 	}
+	emp.Next = cur
 
 }
 
@@ -6932,4 +6930,5 @@ func main() {
 		}
 	}
 }
+
 ```
