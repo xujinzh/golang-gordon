@@ -6659,6 +6659,384 @@ redis hash 是一个键值对集合，类似于 golang 中的 map：`var user ma
 # 数据结构
 
 
+## 队列
+队列（queue）是一个有序列表，可以用数组或链表来实现。队列遵循先入先出的原则：先存入队列的数据，要先取出，后存入的要后取出。
+
+### 简单队列
+
+用数组模拟队列：
+1. 队列本身是有序列表，若使用数组的结构来存储队列的数据，则队列数组的声明中需要有队列最大容量。因为队列的输出、输入是分别从前后端来处理，因此需要两个变量 front、rear 分别记录队列前后端的下标，front 会随着数据输出而改变，而 rear 则随着数据输入而改变；
+2. 当将数据存入队列是称为 addqueue，首先将尾指针 rear 往后移：`rear + 1`。如果尾指针小于等于队列的最大下标 maxsize - 1，那么数据存入，否则无法存入。当 front == rear 时，表示队列为空
+3. rear 表示队列的最后（含）；front 表示队列的最前元素（不含）
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+	"os"
+)
+
+type Queue struct {
+	maxSize int
+	array   [5]int // 数组
+	front   int    // 队列首，不含
+	rear    int    // 队列尾，含
+}
+
+// 添加数据到队列
+func (queue *Queue) AddQueue(val int) (err error) {
+	// 先判断队列是否已满
+	if queue.rear == queue.maxSize-1 {
+		return errors.New("queue full")
+	}
+
+	queue.rear++
+	queue.array[queue.rear] = val
+	return
+}
+
+// 显示队列
+func (queue *Queue) ShowQueue() {
+	fmt.Println("当前队列情况：")
+	// 找到队首，然后遍历到队尾
+	for i := queue.front + 1; i <= queue.rear; i++ { // queue.front 不含队首的元素
+		fmt.Printf("array[%d]=%d\n", i, queue.array[i])
+	}
+}
+
+// 从队列中取数据
+func (queue *Queue) GetQueue() (val int, err error) {
+	// 先判断队列是否为空
+	if queue.rear == queue.front {
+		err = errors.New("queue empty")
+		return 0, err
+	}
+	queue.front++
+	val = queue.array[queue.front]
+	err = nil
+	return val, err
+}
+
+func main() {
+	// 先创建一个队列
+	queue := &Queue{
+		maxSize: 5,
+		front:   -1,
+		rear:    -1,
+	}
+
+	// 添加数据
+	var key string
+	var val int
+	for {
+		fmt.Println("1. 输入 add 添加数据到队列")
+		fmt.Println("2. 输入 get 获取队列中数据")
+		fmt.Println("3. 输入 show 显示队列的数据")
+		fmt.Println("4. 输入 exit 退出程序")
+
+		fmt.Scanln(&key)
+		switch key {
+		case "add":
+			fmt.Println("输入要添加进队列的数")
+			fmt.Scanln(&val)
+			err := queue.AddQueue(val)
+			if err != nil {
+				fmt.Println("添加数据到队列失败")
+			} else {
+				fmt.Println("添加数据到队列成功")
+			}
+		case "get":
+			fmt.Println("get")
+			v, err := queue.GetQueue()
+			if err != nil {
+				fmt.Println("get val error")
+			} else {
+				fmt.Println("get value =", v)
+			}
+		case "show":
+			queue.ShowQueue()
+		case "exit":
+			os.Exit(0)
+		default:
+			fmt.Println("输入有误")
+		}
+	}
+}
+```
+
+### 环形队列
+上面的队列只能存储有限数据，没有有效的利用数据的空间，考虑使用环形队列。
+
+数组模拟环形列表：
+1. 尾索引或尾指针 tail 的下一个为头索引 head 时表示队列满，即将队列容量空出一个作为约定。判断队列满：`(tail + 1) % maxsize == head`
+2. 判断队列空：`tail == head`
+3. 计算队列元素个数：`(tail + maxsize - head) % maxsize`
+4. 初始化队列：`tail = head = 0`
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+	"os"
+)
+
+type CircleQueue struct {
+	maxSize int
+	array   [5]int
+	head    int
+	tail    int
+}
+
+// 添加元素到队列
+func (circlequeue *CircleQueue) Push(val int) (err error) {
+	// 先判断是否已满
+	if circlequeue.IsFull() {
+		return errors.New("circle queue full")
+	}
+	circlequeue.array[circlequeue.tail] = val
+	circlequeue.tail = (circlequeue.tail + 1) % circlequeue.maxSize
+	return
+}
+
+// 出队列
+func (circlequeue *CircleQueue) Pop() (val int, err error) {
+	if circlequeue.IsEmpty() {
+		return 0, errors.New("circle queue empty")
+	}
+	// 非空，取值
+	// head 是队首，含元素
+	val = circlequeue.array[circlequeue.head]
+	circlequeue.head = (circlequeue.head + 1) % circlequeue.maxSize
+	return val, nil
+}
+
+// 显示队列
+func (circlequeue *CircleQueue) Show() {
+	size := circlequeue.Size()
+	if size == 0 {
+		fmt.Println("circle queue is empty")
+	}
+
+	// 遍历队列
+	tmp := circlequeue.head
+	for i := 0; i < size; i++ {
+		fmt.Printf("array[%d] = %d \n", tmp, circlequeue.array[tmp])
+		tmp = (tmp + 1) % circlequeue.maxSize
+	}
+}
+
+// 判断队列为空
+func (circlequeue *CircleQueue) IsEmpty() bool {
+	return circlequeue.tail == circlequeue.head
+}
+
+// 判断队列满
+func (circlequeue *CircleQueue) IsFull() bool {
+	return (circlequeue.tail+1)%circlequeue.maxSize == circlequeue.head
+}
+
+// 获取队列元素个数
+func (circlequeue *CircleQueue) Size() int {
+	return (circlequeue.tail + circlequeue.maxSize - circlequeue.head) % circlequeue.maxSize
+}
+
+func main() {
+	// 先创建一个队列
+	queue := &CircleQueue{
+		maxSize: 5,
+		head:    0,
+		tail:    0,
+	}
+
+	// 添加数据
+	var key string
+	var val int
+	for {
+		fmt.Println("1. 输入 add 添加数据到队列")
+		fmt.Println("2. 输入 get 获取队列中数据")
+		fmt.Println("3. 输入 show 显示队列的数据")
+		fmt.Println("4. 输入 exit 退出程序")
+
+		fmt.Scanln(&key)
+		switch key {
+		case "add":
+			fmt.Println("输入要添加进队列的数")
+			fmt.Scanln(&val)
+			err := queue.Push(val)
+			if err != nil {
+				fmt.Println("添加数据到队列失败")
+			} else {
+				fmt.Println("添加数据到队列成功")
+			}
+		case "get":
+			fmt.Println("get")
+			v, err := queue.Pop()
+			if err != nil {
+				fmt.Println("get val error")
+			} else {
+				fmt.Println("get value =", v)
+			}
+		case "show":
+			queue.Show()
+		case "exit":
+			os.Exit(0)
+		default:
+			fmt.Println("输入有误")
+		}
+	}
+}
+```
+
+## 链表
+
+链表是有序的列表
+
+### 单链表
+
+带头结点的单链表
+
+```go
+package main
+
+import "fmt"
+
+type HeroNode struct {
+	no       int
+	name     string
+	nickname string
+	next     *HeroNode // 指向下一个结点
+}
+
+// 单链表的增删改查
+// 给链表添加结点
+func InsertHeroNode(head *HeroNode, newHeroNode *HeroNode) {
+	// 先找到链表最后结点
+	// 用辅助结点（跑龙套）
+	tmp := head
+	for {
+		if tmp.next == nil {
+			break
+		}
+		tmp = tmp.next
+	}
+	// 将 newHeroNode 加入到链表末尾
+	tmp.next = newHeroNode
+}
+
+// 根据编号给链表添加结点，从小到大
+func InsertHeroNodeByNo(head *HeroNode, newHeroNode *HeroNode) {
+	// 先找到链表最后结点
+	// 用辅助结点（跑龙套）
+	tmp := head
+	flag := true
+	for {
+		if tmp.next == nil {
+			break
+		} else if tmp.next.no > newHeroNode.no {
+			break
+		} else if tmp.next.no == newHeroNode.no {
+
+			flag = false
+			break
+		}
+		tmp = tmp.next
+	}
+
+	// 将 newHeroNode 添加到 tmp 后面
+	if !flag {
+		fmt.Println("链表中已经有改ID", newHeroNode.no)
+	} else {
+		newHeroNode.next = tmp.next
+		tmp.next = newHeroNode
+	}
+}
+
+func DelHeroNode(head *HeroNode, id int) {
+	tmp := head
+	flag := false
+
+	for {
+		if tmp.next == nil {
+			break
+		} else if tmp.next.no == id {
+			// found it
+			flag = true
+			break
+		}
+		tmp = tmp.next
+	}
+	// delete
+	if flag {
+		tmp.next = tmp.next.next
+	} else {
+		fmt.Printf("id = %d 不存在", id)
+	}
+}
+
+// 显示链表信息
+func ListHeroNode(head *HeroNode) {
+	// 用辅助结点
+	tmp := head
+	// 先判断该链表是不是空链表
+	if tmp.next == nil {
+		fmt.Println("link is null")
+		return
+	}
+	// 遍历链表
+	for {
+		fmt.Printf("[%d, %s, %s]->", tmp.next.no, tmp.next.name, tmp.next.nickname)
+		tmp = tmp.next
+		if tmp.next == nil {
+			break
+
+		}
+	}
+}
+
+func main() {
+	// 1. 先创建一个头结点
+	head := &HeroNode{}
+	// 2. 创建一个新的 HeroNode
+	hero1 := &HeroNode{
+		no:       1,
+		name:     "宋江",
+		nickname: "及时雨",
+	}
+	hero2 := &HeroNode{
+		no:       2,
+		name:     "卢俊义",
+		nickname: "玉麒麟",
+	}
+	hero3 := &HeroNode{
+		no:       3,
+		name:     "林冲",
+		nickname: "豹子头",
+	}
+	// add
+	// InsertHeroNode(head, hero1)
+	// InsertHeroNode(head, hero2)
+	// InsertHeroNode(head, hero3)
+	InsertHeroNodeByNo(head, hero3)
+	InsertHeroNodeByNo(head, hero2)
+	InsertHeroNodeByNo(head, hero1)
+	// show
+	ListHeroNode(head)
+	// delete
+	DelHeroNode(head, 2)
+	// show
+	fmt.Println()
+	ListHeroNode(head)
+
+}
+
+```
+## 双向链表
+
+todo
+
 ## 栈
 1. 栈（stack）有时候也被叫做堆栈，注意和堆是不同的概念；
 2. 栈是先入后出（first in last out）的有序列表；
@@ -6931,4 +7309,105 @@ func main() {
 	}
 }
 
+```
+
+## 二叉树
+每个节点最多只有两个子节点的树称为二叉树。二叉树的遍历分为前序遍历、中序遍历和后序遍历，均以父节点或根节点参考来讲。
+
+前序遍历的访问顺序是：
+1. 先访问父节点或根节点
+2. 再遍历左子树
+3. 最后遍历右子树
+
+中序遍历的访问顺序是：
+1. 先遍历左子树
+2. 再访问父节点或根节点
+3. 最后遍历右子树
+
+前序遍历的访问顺序是：
+1. 先遍历左子树
+2. 再遍历右子树
+3. 最后访问父节点或根节点
+
+```go
+package main
+
+import "fmt"
+
+type Hero struct {
+	No    int
+	Name  string
+	Left  *Hero
+	Right *Hero
+}
+
+// 前序遍历（先root结点，再左子树，最后右子树）
+func PreOrder(node *Hero) {
+	if node != nil {
+		fmt.Printf("no=%d name=%s\n", node.No, node.Name)
+		PreOrder(node.Left)
+		PreOrder(node.Right)
+	}
+}
+
+// 中序遍历（先左子树，再root结点，最后右子树）
+func InfixOrder(node *Hero) {
+	if node != nil {
+		InfixOrder(node.Left)
+		fmt.Printf("no=%d name=%s\n", node.No, node.Name)
+		InfixOrder(node.Right)
+	}
+}
+
+// 后序遍历（先左子树，再右子树， 最后root结点）
+func PostOrder(node *Hero) {
+	if node != nil {
+		PostOrder(node.Left)
+		PostOrder(node.Right)
+		fmt.Printf("no=%d name=%s\n", node.No, node.Name)
+	}
+}
+
+func main() {
+	root := &Hero{
+		No:   1,
+		Name: "lvluo",
+	}
+
+	left := &Hero{
+		No:   2,
+		Name: "duorou",
+	}
+
+	right := &Hero{
+		No:   3,
+		Name: "mudan",
+	}
+	root.Left = left
+	root.Right = right
+
+	left1 := &Hero{
+		No:   4,
+		Name: "cimei",
+	}
+	left.Right = left1
+
+	right1 := &Hero{
+		No:   5,
+		Name: "qiandai",
+	}
+	right.Right = right1
+
+	// 前序遍历
+	fmt.Println("前序遍历：")
+	PreOrder(root)
+
+	// 中序遍历
+	fmt.Println("中序遍历：")
+	InfixOrder(root)
+
+	// 后序遍历
+	fmt.Println("后序遍历：")
+	PostOrder(root)
+}
 ```
