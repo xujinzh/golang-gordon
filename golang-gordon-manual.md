@@ -7034,8 +7034,446 @@ func main() {
 
 ```
 ## 双向链表
+```go
+package main
 
-todo
+import "fmt"
+
+type HeroNode struct {
+	no       int
+	name     string
+	nickname string
+	pre      *HeroNode // 指向前一个节点
+	next     *HeroNode // 指向后一个节点
+}
+
+// 插入节点
+func InsertHeroNode(head *HeroNode, newHeroNode *HeroNode) {
+	tmp := head
+	for {
+		if tmp.next == nil {
+			break
+		}
+		tmp = tmp.next
+	}
+
+	tmp.next = newHeroNode
+	newHeroNode.pre = tmp
+}
+
+// 根据编号给链表添加结点，从小到大
+func InsertHeroNodeByNo(head *HeroNode, newHeroNode *HeroNode) {
+	// 先找到链表最后结点
+	// 用辅助结点（跑龙套）
+	tmp := head
+	flag := true
+	for {
+		if tmp.next == nil {
+			// 链表最后
+			break
+		} else if tmp.next.no > newHeroNode.no {
+			// newHeroNode 插入tmp后面
+			break
+		} else if tmp.next.no == newHeroNode.no {
+
+			flag = false
+			break
+		}
+		tmp = tmp.next
+	}
+
+	// 将 newHeroNode 添加到 tmp 后面
+	if !flag {
+		fmt.Println("链表中已经有改ID", newHeroNode.no)
+	} else {
+		newHeroNode.next = tmp.next
+		newHeroNode.pre = tmp
+		if tmp.next != nil {
+			tmp.next.pre = newHeroNode
+		}
+		tmp.next = newHeroNode
+	}
+}
+
+// 显示链表信息
+func ListHeroNode(head *HeroNode) {
+	// 用辅助结点
+	tmp := head
+	// 先判断该链表是不是空链表
+	if tmp.next == nil {
+		fmt.Println("link is null")
+		return
+	}
+	// 遍历链表
+	for {
+		fmt.Printf("[%d, %s, %s]->", tmp.next.no, tmp.next.name, tmp.next.nickname)
+		tmp = tmp.next
+		if tmp.next == nil {
+			break
+
+		}
+	}
+}
+
+// 删除一个节点
+func DelHeroNode(head *HeroNode, id int) {
+	tmp := head
+	flag := false
+
+	for {
+		if tmp.next == nil {
+			break
+		} else if tmp.next.no == id {
+			// found it
+			flag = true
+			break
+		}
+		tmp = tmp.next
+	}
+	// delete
+	if flag {
+		tmp.next = tmp.next.next
+		if tmp.next != nil {
+			tmp.next.pre = tmp
+		}
+	} else {
+		fmt.Printf("id = %d 不存在", id)
+	}
+}
+
+// 显示链表信息
+func ListHeroNodeConverse(head *HeroNode) {
+	// 用辅助结点
+	tmp := head
+	// 先判断该链表是不是空链表
+	if tmp.next == nil {
+		fmt.Println("link is null")
+		return
+	}
+
+	// 先定位到最后一个节点
+	for {
+		if tmp.next == nil {
+			break
+		}
+		tmp = tmp.next
+	}
+	// 遍历链表
+	for {
+		fmt.Printf("[%d, %s, %s]->", tmp.no, tmp.name, tmp.nickname)
+		tmp = tmp.pre
+		if tmp.pre == nil {
+			break
+
+		}
+	}
+}
+
+func main() {
+	// 1. 先创建一个头结点
+	head := &HeroNode{}
+	// 2. 创建一个新的 HeroNode
+	hero1 := &HeroNode{
+		no:       1,
+		name:     "宋江",
+		nickname: "及时雨",
+	}
+	hero2 := &HeroNode{
+		no:       2,
+		name:     "卢俊义",
+		nickname: "玉麒麟",
+	}
+	hero3 := &HeroNode{
+		no:       3,
+		name:     "林冲",
+		nickname: "豹子头",
+	}
+	// add
+	// InsertHeroNode(head, hero1)
+	// InsertHeroNode(head, hero2)
+	// InsertHeroNode(head, hero3)
+	InsertHeroNodeByNo(head, hero3)
+	InsertHeroNodeByNo(head, hero2)
+	InsertHeroNodeByNo(head, hero1)
+	// show
+	ListHeroNode(head)
+	fmt.Println()
+	ListHeroNodeConverse(head)
+	// delete
+	DelHeroNode(head, 2)
+	// show
+	fmt.Println()
+	ListHeroNodeConverse(head)
+}
+
+```
+
+## 单向环形链表
+
+```go
+package main
+
+import "fmt"
+
+type CatNode struct {
+	no   int
+	name string
+	next *CatNode
+}
+
+func InsertCatNode(head *CatNode, newCatNode *CatNode) {
+	// 先判断是不是第一只猫
+	if head.next == nil {
+		head.no = newCatNode.no
+		head.name = newCatNode.name
+		head.next = head
+		fmt.Println(newCatNode, "加入到单节点环形链表中")
+		return
+
+	}
+	// 定义辅助变量，帮助获取到环形链表的最后节点
+	tmp := head
+	for {
+		if tmp.next == head {
+			break
+		}
+		tmp = tmp.next
+	}
+	// 加入链表
+	tmp.next = newCatNode
+	newCatNode.next = head
+}
+
+// 删除一个节点
+func DelCatNode(head *CatNode, id int) *CatNode {
+	cur := head
+	bef := head
+	// 空环形链表
+	if cur.next == nil {
+		fmt.Println("circle link is null, can not delete")
+		return head
+	}
+	// 单节点环形链表
+	if cur.next == cur {
+		cur.next = nil
+		return head
+	}
+	// 多个节点的环形链表
+	// 先把 bef 移动到最后一个节点，保持在 cur（目前是指向 head）前面
+	for {
+		if bef.next == head {
+			break
+		}
+		bef = bef.next
+	}
+
+	flag := true
+	for {
+		// 如果到最后一个节点，但是还没与其比较
+		if cur.next == head {
+			break
+		}
+		if cur.no == id {
+			if cur == head { // 如果删除的事头结点
+				head = head.next
+			}
+			// 找到要删除的节点
+			bef.next = cur.next
+			fmt.Printf("%d被删除\n", id)
+			flag = false // 已经删除成功
+			break
+		}
+		// 继续移动
+		cur = cur.next
+		bef = bef.next
+	}
+	if flag { // 说明还没有删除，还要比较一次 最后的节点
+		if cur.no == id {
+			bef.next = cur.next
+			fmt.Printf("%d 被删除\n", id)
+		} else {
+			fmt.Println("没有该节点")
+		}
+	}
+	return head
+
+}
+
+// 打印链表
+func ListCircleLink(head *CatNode) {
+	fmt.Println("circle link info is")
+	tmp := head
+	if tmp.next == nil {
+		fmt.Println("circle link is null")
+		return
+	}
+	for {
+		// fmt.Println("cat info =", *tmp, "->")
+		fmt.Printf("cat info = [id=%d name=%s] ->\n", tmp.no, tmp.name)
+		if tmp.next == head { //如果tmp是链表最后结点
+			break
+		}
+		tmp = tmp.next
+	}
+}
+
+func main() {
+	head := &CatNode{}
+
+	cat1 := &CatNode{
+		no:   1,
+		name: "tom",
+	}
+
+	cat2 := &CatNode{
+		no:   2,
+		name: "tom",
+	}
+	cat3 := &CatNode{
+		no:   3,
+		name: "tom",
+	}
+	InsertCatNode(head, cat1)
+	InsertCatNode(head, cat2)
+	InsertCatNode(head, cat3)
+	fmt.Println()
+	head = DelCatNode(head, 30)
+	fmt.Println()
+	ListCircleLink(head)
+}
+
+```
+
+## 约瑟夫问题
+设编号为 1， 2， ...，n 的 n 个人围坐一圈，约定编号为 k（1 <= k <= n） 的人从 1 开始报数，数到 m  的那个人出列，它的下一位又从 1 开始报数，数到 m 的那个人又出列，以此类推，直到所有人出列为止，由此产生一个出队编号的序列。
+
+用一个不带头结点的循环链表来处理约瑟夫（josephu）问题：先构成一个有 n 个节点的单循环链表，然后由 k 节点起从 1 开始计数，记到 m 时，对应节点从链表删除，然后再从被删除节点的下一个结点又从1开始计数，直到最后一个节点从链表中删除算法结束。
+
+```go
+package main
+
+import "fmt"
+
+type Boy struct {
+	No   int
+	Next *Boy
+}
+
+// 编写一个函数，构成单向的环形链表
+// num 表示环形链表中小孩的个数；*Boy 表示环形链表的头指针
+func AddBoy(num int) *Boy {
+	first := &Boy{} // 空节点
+	cur := &Boy{}   // 辅助指针
+	if num < 1 {
+		fmt.Println("num 值小于1")
+		return first
+	}
+	// 循环构建这个链表
+	for i := 1; i <= num; i++ {
+		boy := &Boy{
+			No: i,
+		}
+		if i == 1 {
+			first = boy
+			cur = boy
+			cur.Next = first
+		} else {
+			cur.Next = boy
+			cur = boy
+			boy.Next = first
+		}
+	}
+	return first
+}
+
+func PlayGame(firstBoy *Boy, startNo int, countNum int) {
+	// 空链表
+	if firstBoy.Next == nil {
+		fmt.Println("null")
+		return
+	}
+	// startNo 必须小于小孩的总数
+	countBoy := 1
+	curBoy := firstBoy
+	for {
+		if curBoy.Next == firstBoy {
+			break
+		}
+		countBoy++
+		curBoy = curBoy.Next
+	}
+	if startNo > countBoy {
+		fmt.Println("起始数大于小孩的总数")
+		return
+	}
+	// 创建辅助结点，一定到最后一个位置
+	tailBoy := firstBoy
+	for {
+		if tailBoy.Next == firstBoy {
+			break
+		}
+		tailBoy = tailBoy.Next
+	}
+	// 先入 firstBoy 移动到 startNo 节点
+	for i := 1; i <= startNo-1; i++ {
+		firstBoy = firstBoy.Next
+		tailBoy = tailBoy.Next
+	}
+	// 开始数 countNum 下删除 firstBoy 指向的小孩
+	for {
+		for i := 1; i <= countNum-1; i++ {
+			firstBoy = firstBoy.Next
+			tailBoy = tailBoy.Next
+		}
+		fmt.Printf("boy %d out ->\n", firstBoy.No)
+		// 删除 firstBoy 指向的小孩
+		firstBoy = firstBoy.Next
+		tailBoy.Next = firstBoy
+		if firstBoy == tailBoy {
+			break
+		}
+	}
+	fmt.Printf("boy %d out\n", firstBoy.No)
+
+}
+
+// 显示单向环形链表
+func Show(firstBoy *Boy) {
+	// 链表空
+	if firstBoy.Next == nil {
+		fmt.Println("null")
+		return
+	}
+
+	// 说明至少有一个小孩
+	// 创建一个指针帮助遍历
+	curBoy := firstBoy
+	for {
+		fmt.Printf("boy no = %d -> ", curBoy.No)
+		if curBoy.Next == firstBoy {
+			break
+		}
+		curBoy = curBoy.Next
+	}
+
+}
+func main() {
+	firstBoy := AddBoy(16)
+	fmt.Println()
+	Show(firstBoy)
+	fmt.Println("\n\nBegin Game:")
+	PlayGame(firstBoy, 3, 2)
+}
+
+```
+
+
+
+
+
+
+
+
 
 ## 栈
 1. 栈（stack）有时候也被叫做堆栈，注意和堆是不同的概念；
