@@ -963,20 +963,26 @@ fmt.Printf("name=%q, age=%d, salary=%f, isPass=%t\n", name, age, salary, isPass)
 
 # 进制
 ## 二进制
-golang中，不能直接使用二进制来表示一个整数，这沿用了C的特点。
+~golang中，不能直接使用二进制来表示一个整数，这沿用了C的特点。~
 ```go
 var i int = 3
 fmt.Printf("%b\n", i)
+```
+```go
+cb := 0b1101
 ```
 
 ## 八进制
 ```go
 011 == 9
+co := 0o1101
 ```
 
 ## 十六进制
 ```go
 0x11 == 17
+
+ch := 0x1101
 ```
 十六进制不区分大小写（a-f, A-F）
 
