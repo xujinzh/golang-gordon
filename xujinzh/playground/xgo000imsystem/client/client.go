@@ -144,7 +144,7 @@ func (this *Client) PrivateChat() {
 			// 1. 提示用户选择其他要私聊的用户
 			fmt.Println("请选择您要私聊的对象(输入exit退出私聊)")
 			// 1.1 判断读取用户输入私聊对象是否成功，如果不成功，那么退出，成功则赋值给privateObj
-			privateObj, err := reader.ReadString('\n')
+			privateObj, err = reader.ReadString('\n')
 			if err != nil {
 				fmt.Println("读取用户输入私聊对象失败：", err)
 				return
