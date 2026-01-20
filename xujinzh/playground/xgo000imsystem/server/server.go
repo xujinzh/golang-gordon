@@ -83,10 +83,11 @@ func (this *Server) Handler(conn net.Conn) {
 		case <-isLive:
 			// 当用户活动状态下，该管道会触发。同时会运行下一条CASE，重置计时器为10秒；如果该条没有运行，那么
 			// 不做任何事情，为了激活select，更新下面的定时器
-		case <-time.After(time.Second * 10):
+		case <-time.After(time.Second * 600):
 			// 已经超时，将当前的用户强制关闭
 			// 如果该条触发，那么表示用户10秒未活动，剔除用户下线
-			user.conn.Write([]byte("长期未活跃，被迫下线\n"))
+			// user.conn.Write([]byte("长期未活跃，被迫下线\n"))
+			user.SendMsg("长期未活跃，被迫下线\n")
 			// 销毁使用的资源
 			close(user.C)
 			// 关闭连接
