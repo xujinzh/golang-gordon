@@ -78,7 +78,10 @@ func (this *Client) QueryOnlineUser() (err error) {
 // 私聊模式
 func (this *Client) PrivateChat() {
 	// 0. 先提示用户当前在线用户
-	this.QueryOnlineUser()
+	err := this.QueryOnlineUser()
+	if err != nil {
+		fmt.Println("查询在线用户失败：", err)
+	}
 	// 1. 提示用户选择要私聊的用户
 	fmt.Println("请选择您要私聊的对象(输入exit退出私聊)")
 	reader := bufio.NewReader(os.Stdin)
@@ -112,7 +115,6 @@ func (this *Client) PrivateChat() {
 
 			// 2.3 如果用户输入的不是exit，那么用户可以持续发送私聊信息
 			for privateChatMsg != "exit" {
-				fmt.Printf("--------------===[%s]===\n", privateChatMsg)
 				// 2.4 如果用户输入的不是空内容，那么发送用户消息
 				// 2.2.2  如果用户输入的不是空（回车）
 				if len(privateChatMsg) != 0 {
@@ -131,28 +133,33 @@ func (this *Client) PrivateChat() {
 				fmt.Printf("您的私聊对象是[%s]，请输入聊天信息(输入exit退出与该对象私聊)：", privateObj)
 				// 2.2 读取用户输入的聊天信息
 				privateChatMsg, err = reader.ReadString('\n') // 该私聊信息字符串最后包含有回车符"\n"
-				fmt.Printf("--------------------[%s]-\n", privateChatMsg)
 				if err != nil {
 					fmt.Println("读取用户输入私聊信息失败：", err)
 					return
 				}
 				// 2.2.1 将用户输入的内容后的回车符去掉
 				privateChatMsg = strings.Split(privateChatMsg, "\n")[0]
-				fmt.Printf("-------------------=[%s]=\n", privateChatMsg)
 			}
-			privateObj = ""
-			// 1. 提示用户选择其他要私聊的用户
-			fmt.Println("请选择您要私聊的对象(输入exit退出私聊)")
-			// 1.1 判断读取用户输入私聊对象是否成功，如果不成功，那么退出，成功则赋值给privateObj
-			privateObj, err = reader.ReadString('\n')
-			if err != nil {
-				fmt.Println("读取用户输入私聊对象失败：", err)
-				return
-			}
-			// 1.2 私聊对象后面的换行符去掉，只保留私聊对象用户名
-			privateObj = strings.Split(privateObj, "\n")[0]
-
 		}
+
+		// privateObj = ""
+		// 0. 先提示用户当前在线用户
+		err = this.QueryOnlineUser()
+		if err != nil {
+			fmt.Println("查询在线用户失败：", err)
+		}
+		// 1. 提示用户选择其他要私聊的用户
+		fmt.Println("请选择您要私聊的对象(输入exit退出私聊)")
+		// 1.1 判断读取用户输入私聊对象是否成功，如果不成功，那么退出，成功则赋值给privateObj
+		privateObj, err = reader.ReadString('\n')
+		if err != nil {
+			fmt.Println("读取用户输入私聊对象失败：", err)
+			return
+		}
+
+		// 1.2 私聊对象后面的换行符去掉，只保留私聊对象用户名
+		privateObj = strings.Split(privateObj, "\n")[0]
+
 	}
 }
 
