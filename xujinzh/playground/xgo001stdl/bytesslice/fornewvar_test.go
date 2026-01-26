@@ -1,6 +1,9 @@
 package bytesslice
 
-import "fmt"
+import (
+	"fmt"
+	"testing"
+)
 
 // 辅助函数
 func add(a, b int) (int, error) {
@@ -8,7 +11,7 @@ func add(a, b int) (int, error) {
 }
 
 // 在for循环中重新定义一个新变量（n, err := add(n, n)）会影响之前同名的变量吗？测试下
-func TestForNewVar() {
+func TestForNewVar(t *testing.T) {
 	// 计数变量，辅助停止FOR循环
 	var flagCount int = 0
 	n := 1
