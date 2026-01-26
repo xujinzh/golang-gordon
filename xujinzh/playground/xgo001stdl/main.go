@@ -77,7 +77,6 @@ func byteString() {
 func main() {
 	byteString()
 	bytesslice.ByteAppend()
-	bytesslice.TestForNewVar()
 	bytesslice.TestSlicesByteSplit()
 
 }
