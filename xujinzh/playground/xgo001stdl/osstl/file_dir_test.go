@@ -34,7 +34,7 @@ func TestCreate(t *testing.T) {
 	// 记得关闭文件
 	defer f.Close()
 	// todo
-	defer fmt.Printf("程序运行结束。")
+	defer fmt.Printf("程序运行结束。\n")
 }
 
 // 测试创建单级目录
