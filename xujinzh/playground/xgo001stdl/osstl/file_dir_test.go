@@ -40,7 +40,7 @@ func TestCreate(t *testing.T) {
 // 测试创建单级目录
 func TestMkdir(t *testing.T) {
 	// 创建一个文件夹，而不是多级目录。注意非递归创建，即创建的文件夹上一层目录必须存在
-	err := os.Mkdir("./assets/test", os.ModePerm)
+	err := os.Mkdir("./assets", os.ModePerm)
 	// 如果创建失败，那么报异常信息
 	if err != nil {
 		panic(err)
@@ -93,6 +93,62 @@ func TestGetwd(t *testing.T) {
 		t.Log("获取当前路径失败：", err)
 	}
 	// 打印当前路径
-	fmt.Printf("wd: %v\n", wd)
+	fmt.Printf("当前工作目录: %v\n", wd)
 
+}
+
+// 测试切换目录
+func TestChdir(t *testing.T) {
+	// 尝试切换到指定目录
+	err := os.Chdir("/opt")
+	// 如果切换失败
+	if err != nil {
+		t.Log("切换目录失败：", err)
+	} else { // 切换成功
+		t.Log("切换目录成功。")
+	}
+	// 获取切换后的工作目录
+	wd, err := os.Getwd()
+	// 如果获取工作目录失败
+	if err != nil {
+		t.Log("获取当前目录失败：", err)
+	}
+	// 打印当前目录
+	fmt.Printf("wd: %v\n", wd)
+	// fmt.Println(os.Getwd())
+}
+
+// 测试获取临时目录
+func TestTempDir(t *testing.T) {
+	// 获取存放临时文件的目录，不同操作系统结果可能不同
+	tmp := os.TempDir()
+	fmt.Printf("tmp: %v\n", tmp)
+}
+
+// 测试重命名文件
+func TestRename(t *testing.T) {
+	// // 重命名文件
+	// err := os.Rename("./assets/test.txt", "./assets/text.txt")
+	// // 捕获重命名失败的异常
+	// if err != nil {
+	// 	t.Log("重命名文件失败：", err)
+	// }
+	// 重命名文件夹
+	err := os.Rename("./assets", "./resources")
+	if err != nil { // 如果失败
+		t.Log("重命名文件夹失败。")
+	} else { // 成功
+		t.Log("重命名文件夹成功。")
+	}
+}
+
+// 修改文件或文件夹权限
+func TestChmod(t *testing.T) {
+	// 尝试改变文件的权限
+	err := os.Chmod("./resources/text.txt", 0o400)
+	if err != nil { // 如果失败
+		t.Log("改变文件权限失败:", err)
+	} else { // 成功
+		t.Log("改变文件权限成功。")
+	}
 }
