@@ -1,4 +1,4 @@
-package osstl_test
+package osstl
 
 import (
 	"fmt"
@@ -33,8 +33,8 @@ func TestCreate(t *testing.T) {
 	}
 	// 记得关闭文件
 	defer f.Close()
-	// todo
-	defer fmt.Printf("程序运行结束。")
+	// 最后一个defer，在函数运行完后先执行
+	defer fmt.Printf("程序运行结束。\n")
 }
 
 // 测试创建单级目录
@@ -74,12 +74,25 @@ func TestRemove(t *testing.T) {
 
 }
 
-// 测试删除多级目录
+// 测试删除多级目录和目录中的文件
 func TestRemoveAll(t *testing.T) {
-	// 删除多级目录
+	// 删除多级目录和目录中的文件
 	err := os.RemoveAll("./assets/a")
-	// 如果删除多级目录失败
+	// 如果删除多级目录和目录中的文件失败
 	if err != nil {
 		t.Log("删除目录失败：", err)
 	}
+}
+
+// 测试获取当前路径
+func TestGetwd(t *testing.T) {
+	// 获取当前路径
+	wd, err := os.Getwd()
+	// 如果失败，打印错误信息
+	if err != nil {
+		t.Log("获取当前路径失败：", err)
+	}
+	// 打印当前路径
+	fmt.Printf("wd: %v\n", wd)
+
 }

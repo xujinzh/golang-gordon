@@ -1,3 +1,3 @@
-module gordon
+module golang-gordon
 
-go 1.23.11
+go 1.25.6
