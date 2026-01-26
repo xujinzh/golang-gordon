@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"stl/bytesslice"
 	"strconv"
 	"strings"
 )
@@ -75,7 +76,8 @@ func byteString() {
 
 func main() {
 	byteString()
-	ByteAppend()
-	TestForNewVar()
-	TestSlicesByteSplit()
+	bytesslice.ByteAppend()
+	bytesslice.TestForNewVar()
+	bytesslice.TestSlicesByteSplit()
+
 }
