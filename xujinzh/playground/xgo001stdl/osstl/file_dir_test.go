@@ -145,10 +145,21 @@ func TestRename(t *testing.T) {
 // 修改文件或文件夹权限
 func TestChmod(t *testing.T) {
 	// 尝试改变文件的权限
-	err := os.Chmod("./resources/text.txt", 0o400)
+	err := os.Chmod("./resources/text.txt", 0o750)
 	if err != nil { // 如果失败
 		t.Log("改变文件权限失败:", err)
 	} else { // 成功
 		t.Log("改变文件权限成功。")
 	}
+}
+
+// 测试改变文件的所有者和所有组
+func TestChown(t *testing.T) {
+	err := os.Chown("./resources/text.txt", 0, 0)
+	if err != nil {
+		t.Log("改变文件所有者和所有组失败：", err)
+	} else {
+		t.Log("成功")
+	}
+
 }
