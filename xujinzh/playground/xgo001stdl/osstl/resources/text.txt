@@ -1,0 +1,3 @@
+helloinsert content
+golang []byte
+hello, golang string
