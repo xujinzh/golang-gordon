@@ -155,7 +155,7 @@ func TestChmod(t *testing.T) {
 
 // 测试改变文件的所有者和所有组
 func TestChown(t *testing.T) {
-	err := os.Chown("./resources/text.txt", 0, 0)
+	err := os.Chown("./resources/text.txt", 1000, 1000)
 	if err != nil {
 		t.Log("改变文件所有者和所有组失败：", err)
 	} else {
