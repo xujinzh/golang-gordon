@@ -1,0 +1,6 @@
+2026/02/06 23:27:12 this is a log
+[MyLog] 2026/02/06 23:28:30.838584 log_test.go:119: this is a log
+[MyLog] 2026/02/06 23:29:00.537123 log_test.go:119: this is a log
+[MyCustomLog] 2026/02/06 23:35:12 /disk0/documents/codes/golang-gordon/xujinzh/playground/xgo001stdl/logstl/log_test.go:135: this is a custom log
+[MyCustomLog] 2026/02/06 23:41:46 /disk0/documents/codes/golang-gordon/xujinzh/playground/xgo001stdl/logstl/log_test.go:138: this is a custom log
+[MyCustomMultWriterLog] 2026/02/06 23:41:46.768834 log_test.go:143: this is a multi writer custom log...
