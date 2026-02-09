@@ -555,3 +555,122 @@ func TestMultiWriter(t *testing.T) {
 	fmt.Printf("buf1.String(): %v\n", buf1.String())
 	fmt.Printf("buf2.String(): %v\n", buf2.String())
 }
+
+// 8.7 Pipe
+
+/*
+func Pipe() (*PipeReader, *PipeWriter)
+
+Pipe创建一个同步的内存管道
+可用于连接期望io.Reader的代码和期望io.Writer的代码
+
+管道上的读和写是一对一匹配的，除非需要多次读取才能使用单词写入。也就是说，每次对PipeWriter的写入都将阻塞，直到它满足从PipeReader读取的一个或多个读取，这些读取会完全消耗已写入的数据。
+
+数据直接从Write复制到相应的Read（或Reads）；没有内部缓冲
+
+对读的并行调用和对写的并行调用也是安全的：单个调用将按顺序执行
+*/
+
+func TestPip(t *testing.T) {
+	// 创建管道
+	r, w := io.Pipe()
+	// 写入数据
+	go func() {
+		fmt.Fprint(w, "some io.Reader stream to be read\n")
+		w.Close()
+	}()
+
+	// 读取数据
+	if _, err := io.Copy(os.Stdout, r); err != nil {
+		t.Fatal(err)
+	}
+
+}
+
+// 8.8 ReadAll
+
+/*
+func ReadAll(r Reader) ([]byte, error)
+
+ReadAll从r读取，直到出现错误或EOF，并返回其读取的数据。成功的调用返回err==nil，而不是err==EOF。
+由于ReadAll定义为从src读取直到EOF，因此它不会将读取的EOF视为要报告的错误
+*/
+
+func TestReadAll(t *testing.T) {
+	// 创建reader
+	r := strings.NewReader("go is a general-purpose language designed with systems programming in mind")
+	// 读取所有数据
+	b, err := io.ReadAll(r)
+	if err != nil {
+		t.Log(err)
+
+	}
+	fmt.Printf("b: %q\n", b)
+}
+
+// 8.9 ReadAtLeat
+
+/*
+func ReadAtLeast(r Reader, buf []byte, min int) (n int, err error)
+
+ReadAtLeast从r读取到buf，直到它至少读取了min字节
+它返回复制的字节数n，如果读取的字节数少则返回错误
+仅当未读取任何字节时，错误才是EOF
+如果在读取少于最小字节后发生EOF，则ReadAtLeast返回ErrUnexpectedEOF
+如果min大于buf的长度，则ReadAtLeast返回ErrShortBuffer
+返回时，当且仅当err==nil时，n >= min
+*/
+
+func TestReadAtLeast(t *testing.T) {
+
+	r := strings.NewReader("some io.Reader stream to be read \n")
+
+	buf := make([]byte, 4)
+
+	if _, err := io.ReadAtLeast(r, buf, 4); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("buf: %q\n", buf)
+
+	// buffer smaller than minimal read size
+	shortBuf := make([]byte, 3)
+
+	if _, err := io.ReadAtLeast(r, shortBuf, 4); err != nil {
+		fmt.Printf("err: %v\n", err)
+
+	}
+
+}
+
+
+// 8.10 ReadFull
+
+/* 
+func ReadFull(r Reader, buf []byte) (n int, err error)
+
+ReadFull将r中的len(buf)个字节准确地读取到buf中
+它返回复制的字节数，如果读取的字节数少则返回错误。
+仅当未读取任何字节时，错误才是EOF
+如果在读取了一些但不是全部字节后发生EOF，则ReadFull返回ErrUnexpectedEOF
+返回时，当且仅当err==nil时，n==len(buf)
+*/
+
+func TestReadFull(t *testing.T) {
+
+	r := strings.NewReader("some io.Reader stream to be read\n")
+
+	buf := make([]byte, 4)
+
+	if _,err  := io.ReadFull(r, buf); err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("buf: %q\n", buf)
+
+	// minimal read size bigger than io.Reader stream
+	longBuf := make([]byte, 64)
+
+	if _, err := io.ReadFull(r, longBuf); err != nil{
+		log.Fatal(err)
+	}
+}
