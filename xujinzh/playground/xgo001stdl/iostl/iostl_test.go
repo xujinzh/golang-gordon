@@ -642,10 +642,9 @@ func TestReadAtLeast(t *testing.T) {
 
 }
 
-
 // 8.10 ReadFull
 
-/* 
+/*
 func ReadFull(r Reader, buf []byte) (n int, err error)
 
 ReadFull将r中的len(buf)个字节准确地读取到buf中
@@ -661,7 +660,7 @@ func TestReadFull(t *testing.T) {
 
 	buf := make([]byte, 4)
 
-	if _,err  := io.ReadFull(r, buf); err != nil {
+	if _, err := io.ReadFull(r, buf); err != nil {
 		log.Fatal(err)
 	}
 
@@ -670,7 +669,203 @@ func TestReadFull(t *testing.T) {
 	// minimal read size bigger than io.Reader stream
 	longBuf := make([]byte, 64)
 
-	if _, err := io.ReadFull(r, longBuf); err != nil{
+	if _, err := io.ReadFull(r, longBuf); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// 8.11 SectionReader
+
+/*
+SectionReader在ReaderAt的基础上实现了Read， Seek和ReadAt
+
+具体实现方法有：
+
+1. func NewSectionReader(r ReaderAt, off int64, n int64) *SectionReader
+结构体SectionReader的创建方法
+NewSectionReader返回一个SectionReader，它从r开始读取，偏移量为off，并在n个字节后以EOF停止
+
+2. func (s *SectionReader) Read(p []byte) (n int, err error)
+实现了接口Reader的Read方法
+
+3. func (s *SectionReader) ReadAt(p []byte, off int64) (n int, err error)
+实现了接口ReaderAt的ReadAt方法
+
+4. func (s *SectionReader) Seek(offset int64, whence int) (int64, error)
+实现了接口Seeker的Seek方法
+
+5. func (s *SectionReader) Size() int64
+Size返回以字节为单位的片段大小
+*/
+
+// 8.11.1 NewSectionReader
+
+/*
+func NewSectionReader(r ReaderAt, off int64, n int64) *SectionReader
+
+NewSectionReader返回一个SectionReader，它从r开始读取偏移量off，并在n个字节后以EOF停止
+*/
+
+func TestSectionReader(t *testing.T) {
+	// 创建reader
+	r := strings.NewReader("some io.Reader stream to be read\n")
+	// 创建SectionReader
+	s := io.NewSectionReader(r, 5, 17)
+
+	// 拷贝SectionReader到控制台
+	if _, err := io.Copy(os.Stdout, s); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// 8.11.2 SectionReader.Read
+
+/*
+func (s *SectionReader) Read(p []byte) (n int, err error)
+
+实现了接口Reader的Read方法
+*/
+
+func TestSectionReader2(t *testing.T) {
+	// 创建Reader
+	r := strings.NewReader("some io.Reader stream to be read\n")
+
+	// 创建SectionReader
+	s := io.NewSectionReader(r, 5, 17)
+
+	// 读取
+	buf := make([]byte, 9)
+
+	if _, err := s.Read(buf); err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("buf: %q\n", buf)
+
+	// 拷贝到控制台
+	// 因为已经把前面的内容读取了，这里拷贝显示只有后半部分
+	if _, err := io.Copy(os.Stdout, s); err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println()
+
+	// 把r的内容拷贝到控制台
+	// Reader中的内容还是存在的
+	if _, err := io.Copy(os.Stdout, r); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// 8.11.3 SectionReader.ReadAt
+
+/*
+func (s *SectionReader) ReadAt(p []byte, off int64) (n int, err error)
+
+实现了接口ReaderAt的ReadAt方法
+*/
+
+func TestSectionReadAt(t *testing.T) {
+	// 创建Reader
+	r := strings.NewReader("some io.Reader stream to be read\n")
+
+	// 创建SectionReader
+	s := io.NewSectionReader(r, 5, 17)
+
+	// 读取
+	buf := make([]byte, 6)
+	if _, err := s.ReadAt(buf, 10); err != nil {
+		log.Fatal(err)
+	}
+
+	// 打印
+	fmt.Printf("buf: %q\n", buf)
+}
+
+// 8.11.4 SectionReader.Seek
+
+/*
+func (s *SectionReader) Seek(offset int64, whence int) (int64, error)
+
+实现了接口Seeker的Seek方法
+*/
+
+/*
+可以看出来SectionReader是根据ReaderAt实现的，而非Seeker，虽然两者的效果很像，但是ReaderAt读取内容时无视Seeker偏移量的。
+且在读取数据大小上ReadAt是要比Read严格的，同样的Bytes在Read上即使设大了也会没事，但在ReadAt会报错
+
+*/
+
+func TestSeek(t *testing.T) {
+
+	// 创建reader
+	r := strings.NewReader("some io.Reader stream to be read\n")
+	// 创建SectionReader
+	s := io.NewSectionReader(r, 5, 17)
+	// seek: 在 5 + 10 开始， s 中还剩 17 - 10
+	if _, err := s.Seek(10, io.SeekStart); err != nil {
+		log.Fatal(err)
+	}
+	// copy: 拷贝到控制台17 - 10 = 7
+	if _, err := io.Copy(os.Stdout, s); err != nil {
+		log.Fatal(err)
+
+	}
+}
+
+// 8.11.5 SectionReader.Size
+
+/*
+func (s *SectionReader) Size() int64
+
+Size 返回以字节为单位的片段大小
+*/
+
+func TestSectionReaderSize(t *testing.T) {
+	// create reader
+	r := strings.NewReader("some io.Reader stream to be read\n")
+	// create section reader
+	s := io.NewSectionReader(r, 5, 187)
+	// print section reader size (or capacity)
+	fmt.Printf("s.Size(): %v\n", s.Size())
+}
+
+// 8.12 TeeReader
+
+/*
+func TeeReader(r Reader, w Writer) Reader
+
+TeeReader返回一个Reader，该Reader向w写入从r读取的内容
+通过r执行的所有r读取均与对w的相应写入匹配
+没有内部缓冲-写入必须在读取完成之前完成
+写入时遇到的任何错误均报告为读取错误
+*/
+
+func TestTeeReader(t *testing.T) {
+	// create reader
+	// 注意，这里的变量声明和上面不一样
+	var r io.Reader = strings.NewReader("some io.Reader stream to be read\n")
+	// create tee reader
+	r = io.TeeReader(r, os.Stdout)
+
+	// everything read from r will be copied to stdout
+	if _, err := io.ReadAll(r); err != nil {
+		log.Fatal(err)
+	}
+
+}
+
+// 8.13 WriteString
+
+/*
+func WriteString(w Writer, s string) (n int, err error)
+
+WriteString将字符串s的内容写入w，w接受字节片。
+如果w实现StringWriter，则直接调用其WriterString方法。否则，w.Write只调用一次
+*/
+
+func TestWriteString(t *testing.T) {
+	if _, err := io.WriteString(os.Stdout, "Hello World"); err != nil {
 		log.Fatal(err)
 	}
 }
