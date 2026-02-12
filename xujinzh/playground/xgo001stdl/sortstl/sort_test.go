@@ -379,7 +379,7 @@ func (tms testMapSlice) Len() int           { return len(tms) }
 func (tms testMapSlice) Less(i, j int) bool { return tms[i]["a"] < tms[j]["a"] } // 按照"a"对应的值排序
 func (tms testMapSlice) Swap(i, j int)      { tms[i], tms[j] = tms[j], tms[i] }
 
-func TestComples2(t *testing.T) {
+func TestComplex2(t *testing.T) {
 	tms := testMapSlice{
 		{"a": 4, "b": 12},
 		{"a": 3, "b": 11},
@@ -389,4 +389,27 @@ func TestComples2(t *testing.T) {
 	sort.Sort(tms)
 	fmt.Printf("tms: %v\n", tms)
 
+}
+
+type People struct {
+	Name string
+	Age  int
+}
+
+type peopleSlice []People
+
+func (ps peopleSlice) Len() int           { return len(ps) }
+func (ps peopleSlice) Less(i, j int) bool { return ps[i].Age < ps[j].Age }
+func (ps peopleSlice) Swap(i, j int)      { ps[i], ps[j] = ps[j], ps[i] }
+
+func TestComplex3(t *testing.T) {
+	ps := peopleSlice{
+		{Name: "zs", Age: 11},
+		{Name: "ls", Age: 9},
+		{Name: "we", Age: 13},
+	}
+
+	fmt.Printf("ps: %v\n", ps)
+	sort.Sort(ps)
+	fmt.Printf("ps: %v\n", ps)
 }
