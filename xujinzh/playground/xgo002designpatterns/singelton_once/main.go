@@ -1,3 +1,6 @@
+/*
+适合只需要创建一个实例的情况，如鼠标
+*/
 package main
 
 import (
